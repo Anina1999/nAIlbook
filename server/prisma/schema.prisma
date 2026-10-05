@@ -1,0 +1,122 @@
+// nAIlbook data model. Rules: .claude/skills/data-model/SKILL.md
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Role {
+  CLIENT
+  MANICURIST
+  ADMIN
+}
+
+enum BookingStatus {
+  BOOKED
+  CANCELLED
+}
+
+enum CancelledBy {
+  CLIENT
+  MANICURIST
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String
+  role         Role
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile  ManicuristProfile?
+  bookings Booking[]
+}
+
+model ManicuristProfile {
+  userId    Int      @id
+  city      String
+  address   String
+  bio       String
+  imageUrl  String?
+  updatedAt DateTime @updatedAt
+
+  user         User           @relation(fields: [userId], references: [id])
+  services     Service[]
+  workingHours WorkingHours[]
+  daysOff      DayOff[]
+  bookings     Booking[]
+}
+
+model Service {
+  id           Int      @id @default(autoincrement())
+  manicuristId Int
+  name         String
+  description  String?
+  durationMin  Int
+  priceCents   Int
+  updatedAt    DateTime @updatedAt
+
+  manicurist ManicuristProfile @relation(fields: [manicuristId], references: [userId])
+  bookings   Booking[]
+}
+
+// Minutes from midnight, Sofia local time. weekday: 0 = Sunday.
+model WorkingHours {
+  id           Int      @id @default(autoincrement())
+  manicuristId Int
+  weekday      Int
+  startMin     Int
+  endMin       Int
+  updatedAt    DateTime @updatedAt
+
+  manicurist ManicuristProfile @relation(fields: [manicuristId], references: [userId])
+
+  @@unique([manicuristId, weekday])
+}
+
+// date is a Sofia-local "YYYY-MM-DD" string. Removing a day off sets deletedAt;
+// marking the same date again clears it, so the row stays unique per date.
+model DayOff {
+  id           Int       @id @default(autoincrement())
+  manicuristId Int
+  date         String
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
+
+  manicurist ManicuristProfile @relation(fields: [manicuristId], references: [userId])
+
+  @@unique([manicuristId, date])
+}
+
+// startAt and endAt are UTC. Bookings are never deleted, only cancelled.
+// serviceName and priceCents are copied from the service when booking, so
+// later service edits do not rewrite history.
+model Booking {
+  id           Int           @id @default(autoincrement())
+  clientId     Int
+  manicuristId Int
+  serviceId    Int
+  serviceName  String
+  priceCents   Int
+  startAt      DateTime
+  endAt        DateTime
+  status       BookingStatus @default(BOOKED)
+  cancelledBy  CancelledBy?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  client     User              @relation(fields: [clientId], references: [id])
+  manicurist ManicuristProfile @relation(fields: [manicuristId], references: [userId])
+  service    Service           @relation(fields: [serviceId], references: [id])
+
+  @@index([manicuristId, startAt])
+}

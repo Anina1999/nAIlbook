@@ -10,13 +10,18 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "express": "^5.2.1"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^24.19.1",
+    "prisma": "^7.10.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3"

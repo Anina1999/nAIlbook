@@ -57,9 +57,10 @@ The server re-checks everything and never trusts the client. Return the first fa
 ## Days off
 
 - **Allowed dates:** only today or a future date, in Sofia time. Anything else is `SLOT_INVALID`, with a message about the date.
-- **One per date:** a second day off for the same date returns `409 ALREADY_DAY_OFF`.
+- **Active days off only:** a day off counts only while `deletedAt` is null. Load days off with `deletedAt: null` everywhere they are used.
+- **One per date:** a second active day off for the same date returns `409 ALREADY_DAY_OFF`. If the date has a removed row, marking it again clears `deletedAt` on that row.
 - **Existing bookings:** if `BOOKED` bookings exist on that Sofia date, return `409 DAY_HAS_BOOKINGS` with `details.bookings`. Do not cancel them automatically.
-- **Removing:** deleting a day off reopens the date. Only the owning manicurist can delete it.
+- **Removing:** deleting a day off sets `deletedAt` and reopens the date. The row is never deleted. Only the owning manicurist can remove it.
 
 ## Cancel
 

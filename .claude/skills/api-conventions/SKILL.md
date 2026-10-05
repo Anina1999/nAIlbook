@@ -64,7 +64,7 @@ Add a new code here before you use it.
 | `PUT /api/me/working-hours` | manicurist | Replace weekly hours |
 | `GET /api/me/days-off` | manicurist | Own upcoming days off |
 | `POST /api/me/days-off` | manicurist | Mark a day off |
-| `DELETE /api/me/days-off/:id` | manicurist | Reopen a date |
+| `DELETE /api/me/days-off/:id` | manicurist | Reopen a date (soft delete: sets `deletedAt`) |
 | `POST /api/bookings` | client | Book a slot |
 | `GET /api/bookings/mine` | client | Own bookings, upcoming and past |
 | `GET /api/bookings/schedule?date=` | manicurist | Own schedule for a day |

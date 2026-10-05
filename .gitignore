@@ -33,6 +33,10 @@ Thumbs.db
 # Local Claude Code settings
 .claude/settings.local.json
 
+# Postman's local-files sync (YAML). Only the exported collection is tracked.
+docs/postman/*
+!docs/postman/*.postman_collection.json
+
 # Playwright
 client/test-results/
 client/playwright-report/

@@ -48,8 +48,9 @@ Name files `<area>.test.ts`. Use one `describe` per endpoint (`describe('POST /a
 ## Helpers
 
 - **Factories** take an optional overrides object and return the created row. `createManicurist()` also creates the profile, working hours Monday to Friday 09:00–18:00 and one 60-minute service, so a booking test needs one call.
-- **Auth:** `tokenFor(user)` signs a JWT with the same payload as the app, `{ sub, role }`. Only the auth tests go through `/register` and `/login`. Every other test uses `tokenFor`.
-- Passwords in factories are hashed with a low bcrypt cost (for example 4) to keep tests fast.
+- **Auth:** `tokenFor(user)` and `authHeader(user)` sign a JWT through the app's own `signToken`, so the payload is always the app's `{ sub, role, tokenVersion }`. Pass a user row straight from a factory. Only the auth tests go through `/register` and `/login`. Every other test uses `tokenFor`.
+- Passwords in factories are hashed with a low bcrypt cost (4) to keep tests fast. Every factory user has the password `TEST_PASSWORD`.
+- Code that needs a role check but has no real endpoint yet is tested on a small Express app built inside the test file, never on a fake route added to `app`.
 
 ## Dates and time
 
@@ -69,6 +70,7 @@ npx vitest run tests/api/bookings    # in server/, one file
 ## Postman collection
 
 - The collection lives in `docs/postman/nAIlbook.postman_collection.json`, with one folder per module: Auth, Catalog, Days off and Bookings.
+- This JSON file (Collection v2.1) is the source of truth, because every Postman version can import it. Newer Postman versions also sync a linked folder as their own YAML files. `.gitignore` keeps them out of the repo, so a change made in Postman is lost unless it is exported back over the JSON file. After the JSON changes, import it again in Postman and replace the old collection.
 - It runs against the seeded dev server. A `baseUrl` variable defaults to `http://localhost:3000`.
 - The login requests save the token in a collection variable with a test script. Never save a real token or password other than the seed demo accounts in the exported file.
 - Every request has at least one test that checks the status code. Error cases (400, 401, 403, 409) have their own requests.

@@ -11,7 +11,8 @@ The database is SQLite through Prisma. The schema lives in `server/prisma/schema
 
 ```
 User              id, email (unique), passwordHash, name, phone,
-                  role (CLIENT | MANICURIST | ADMIN), createdAt, updatedAt
+                  role (CLIENT | MANICURIST | ADMIN), tokenVersion (Int, default 0),
+                  createdAt, updatedAt
 ManicuristProfile userId (PK, FK User), city, address, bio, imageUrl?, updatedAt
 Service           id, manicuristId (FK), name, description?, durationMin, priceCents, updatedAt
 WorkingHours      id, manicuristId (FK), weekday (0–6, 0 = Sunday), startMin, endMin, updatedAt
@@ -37,6 +38,7 @@ Booking           id, clientId (FK), manicuristId (FK), serviceId (FK),
   - durations and working hours are in minutes;
   - prices are whole euro cents in an `Int` (`priceCents`), everywhere: the database, the API and the client state. The client divides by 100 only to display a price and multiplies by 100 on input. Do not use `Decimal`, because Prisma serializes it as a string in JSON.
 - **Enums:** `role`, `status` and `cancelledBy` use Prisma enums if the installed Prisma version supports them on SQLite. Otherwise use `String` and validate the values with zod.
+- **`tokenVersion`** is copied into every JWT. Logout increments it, which revokes all of the user's tokens (see `api-conventions`). Nothing else changes it.
 - **No hard deletes for bookings.** Cancelling sets `status = CANCELLED`.
 - **Booking snapshot.** When a booking is created, copy the service's `name` and `priceCents` into `serviceName` and `priceCents`. Show and report these, not the current service values, so later price or name changes do not rewrite history. The duration is already fixed by `startAt` and `endAt`.
 - **Days off are soft-deleted.** Removing a day off sets `deletedAt`. Every read of days off (slots, booking validation, the public list, `/me/days-off`) filters `deletedAt: null`. Marking a date that has a removed row clears `deletedAt` on that row instead of inserting, because `(manicuristId, date)` is unique.

@@ -32,12 +32,12 @@ The detailed rules live in project skills under [.claude/skills/](../.claude/ski
 
 ### 1. Auth & Users
 
-- **Owns:** `server/src/modules/auth/` and `server/src/middleware/auth.ts`.
+- **Owns:** `server/src/modules/auth/`, `server/src/middleware/auth.ts` and `server/src/lib/jwt.ts`. It also set up the shared pieces every module uses: `lib/errors.ts`, `lib/validate.ts` and `middleware/error-handler.ts`.
 - **Exposes:**
-  - endpoints for register, login and the current user (`/me`);
-  - `requireAuth`, which sets `req.user`;
+  - endpoints for register, login, logout and the current user (`/me`);
+  - `requireAuth`, which sets `req.user` and rejects tokens revoked by logout;
   - `requireRole(...)`.
-- **Done when:** API tests cover register, a duplicate email, login, a wrong password, `/me` with and without a token, and a role guard rejection.
+- **Done when:** API tests cover register, a duplicate email, login, a wrong password, `/me` with and without a token, a token after logout, and a role guard rejection.
 
 ### 2. Data & Catalog
 

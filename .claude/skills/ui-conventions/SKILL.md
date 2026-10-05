@@ -24,7 +24,7 @@ client/src/
 
 Components call the wrapper in `client/src/api/`, never a raw `fetch`.
 
-**Auth state:** the token is kept in `localStorage` and loaded at startup through `GET /api/auth/me`. A 401 logs the user out.
+**Auth state:** the token is kept in `localStorage` and loaded at startup through `GET /api/auth/me`. A 401 logs the user out. Logout first calls `POST /api/auth/logout`, which revokes the token on the server, and then clears `localStorage`. Clear it even when the call fails.
 
 ## Screens
 
@@ -32,7 +32,7 @@ Components call the wrapper in `client/src/api/`, never a raw `fetch`.
 |------|-----|---------|
 | `/` | anyone | Search by city and service. Results are cards. |
 | `/manicurists/:id` | anyone | Profile, services, date picker, free slots and a Book button (a guest is sent to login) |
-| `/login`, `/register` | guest | Registration includes the role choice |
+| `/login`, `/register` | guest | Registration asks for the account type: client or manicurist (business). For a manicurist, city and address (required) and bio (optional) appear on the same form. They can be edited later on `/profile`. |
 | `/my-bookings` | client | Upcoming bookings with Cancel, and past bookings |
 | `/schedule` | manicurist | Bookings for the selected day, with Cancel |
 | `/days-off` | manicurist | Add or remove days off. The `DAY_HAS_BOOKINGS` warning lists the conflicting bookings. |

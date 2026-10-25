@@ -24,6 +24,7 @@ The detailed rules live in project skills under [.claude/skills/](../.claude/ski
 | `api-conventions` | Module layout, zod, error shape and codes, auth and ownership, endpoint list, API tests |
 | `data-model` | Prisma models, field conventions, seed |
 | `ui-conventions` | Client structure, screens, date and slot picker rules, Bulgarian UI |
+| `ui-design` | Colour and font tokens, spacing, component looks, states, motion, UI wording |
 | `testing` | Test layout, Vitest config, test database, helpers, dates in tests, Postman collection |
 
 ---

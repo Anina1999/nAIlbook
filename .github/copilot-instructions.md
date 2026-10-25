@@ -7,9 +7,10 @@ nAIlbook is a manicure booking platform: a React client (`client/`) and an Expre
 Read these before changing anything in `client/`:
 
 - [.claude/skills/ui-conventions/SKILL.md](../.claude/skills/ui-conventions/SKILL.md): structure, screens and UI rules
+- [.claude/skills/ui-design/SKILL.md](../.claude/skills/ui-design/SKILL.md): colour and font tokens, spacing, components, states, motion and UI wording. Read it before you build or restyle a screen.
 - [docs/architecture.md](../docs/architecture.md): modules and how they connect
 
-The UI sections below mirror the skill. If they disagree, the skill wins. When the skill changes, this file is updated in the same change.
+The UI sections below mirror `ui-conventions`. If they disagree, the skill wins. When the skill changes, this file is updated in the same change.
 
 ## Structure
 
@@ -51,7 +52,11 @@ Components call the wrapper in `client/src/api/`, never a raw `fetch`.
 - **Prices:** show prices as `35 €`.
 - **Errors:** show the server's `message`. Show field errors from `VALIDATION_ERROR` next to their inputs.
 - **Responsive layout:** design mobile-first with Tailwind. Every screen must work at 375px width.
-- **Accessibility basics:** every input has a label, buttons are real `<button>` elements, and disabled dates and slots are actually `disabled`.
+- **Accessibility basics:**
+  - every input has a label, buttons are real `<button>` elements, and disabled dates and slots are actually `disabled`;
+  - every flow works with the keyboard alone, and focus is visible (`focus-visible:` ring classes, never `outline-none` without a replacement);
+  - a button with only an icon has an `aria-label` in Bulgarian, and the icon has `aria-hidden="true"`;
+  - text has a contrast of at least 4.5:1 against its background.
 
 ## Project rules
 

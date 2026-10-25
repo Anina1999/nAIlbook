@@ -64,5 +64,15 @@ npx prisma db seed         # reset does not run the seed in Prisma 7
 ## Documentation
 
 - [docs/architecture.md](docs/architecture.md): modules, ownership and build order
-- [.claude/skills/](.claude/skills/): implementation rules for scheduling, the API, the data model, the UI and tests
+- [.claude/skills/](.claude/skills/): implementation rules for scheduling, the API, the data model, the UI, the visual design and tests
+- [.claude/agents/](.claude/agents/): the backend and frontend developer agents
 - [.github/copilot-instructions.md](.github/copilot-instructions.md): UI rules for GitHub Copilot
+
+## AI-assisted development
+
+The project is built with Claude Code and GitHub Copilot.
+
+- **Skills are the specification.** Each skill in `.claude/skills/` holds the rules for one area, and the AI reads it before it changes that area.
+- **Two agents split a feature.** `backend-developer` builds the `server/` part and `frontend-developer` builds the `client/` part, in parallel and in separate folders. Both work against the API contract in the `api-conventions` skill.
+- **Copilot gets the same UI rules** through `.github/copilot-instructions.md`, which mirrors `ui-conventions` and links `ui-design`.
+- [CLAUDE.md](CLAUDE.md) describes the commands, the stack and how a feature moves through the agents.

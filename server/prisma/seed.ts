@@ -3,68 +3,12 @@
 // demo stays valid whenever it runs. Safe to run again: it clears all rows first.
 import bcrypt from 'bcrypt';
 import { prisma } from '../src/lib/prisma.js';
+import { addDays, sofiaToUtc, todayInSofia, weekdayOf } from '../src/lib/time.js';
 
 // Demo password for every account. It is also listed in the README.
 const DEMO_PASSWORD = 'nailbook123';
 
-const SOFIA = 'Europe/Sofia';
-
-// --- Sofia date helpers ------------------------------------------------------
-// Temporary: module 3 moves time handling into src/lib/time.ts.
-// No fixed +2/+3 offsets, so the times stay right across daylight-saving changes.
-
-function sofiaParts(at: Date) {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: SOFIA,
-    hourCycle: 'h23',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).formatToParts(at);
-  const get = (type: string) => Number(parts.find((p) => p.type === type)!.value);
-  return { year: get('year'), month: get('month'), day: get('day'), hour: get('hour'), minute: get('minute') };
-}
-
-// Minutes Sofia is ahead of UTC at the given instant.
-function sofiaOffsetMin(at: Date): number {
-  const p = sofiaParts(at);
-  const asUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute);
-  return Math.round((asUtc - at.getTime()) / 60_000);
-}
-
-function todaySofia(): string {
-  const p = sofiaParts(new Date());
-  return toDateString(Date.UTC(p.year, p.month - 1, p.day));
-}
-
-function toDateString(utcMidnightMs: number): string {
-  return new Date(utcMidnightMs).toISOString().slice(0, 10);
-}
-
-function parseDate(date: string): number {
-  const [y, m, d] = date.split('-').map(Number);
-  return Date.UTC(y, m - 1, d);
-}
-
-function addDays(date: string, days: number): string {
-  return toDateString(parseDate(date) + days * 86_400_000);
-}
-
-// 0 = Sunday, as in WorkingHours.weekday.
-function weekdayOf(date: string): number {
-  return new Date(parseDate(date)).getUTCDay();
-}
-
-// A Sofia wall-clock time on a Sofia date, as a UTC instant.
-function sofiaToUtc(date: string, minutesFromMidnight: number): Date {
-  const wallAsUtc = parseDate(date) + minutesFromMidnight * 60_000;
-  let utc = wallAsUtc - sofiaOffsetMin(new Date(wallAsUtc)) * 60_000;
-  // Near a daylight-saving switch the first guess can use the wrong offset.
-  utc = wallAsUtc - sofiaOffsetMin(new Date(utc)) * 60_000;
-  return new Date(utc);
-}
+// --- Date helpers ------------------------------------------------------------
 
 // First date in [from, from + 13] whose weekday is in `weekdays`.
 function firstDateOn(from: string, weekdays: number[]): string {
@@ -237,7 +181,7 @@ async function main() {
 
   // Maria: a day off on a Wednesday she normally works, 7–13 days ahead.
   const maria = created[0];
-  const today = todaySofia();
+  const today = todayInSofia(new Date());
   const dayOff = firstDateOn(addDays(today, 7), [3]);
   await prisma.dayOff.create({ data: { manicuristId: maria.user.id, date: dayOff } });
 

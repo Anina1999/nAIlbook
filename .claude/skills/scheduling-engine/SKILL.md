@@ -16,6 +16,8 @@ This is the core of nAIlbook. The rules below are the specification. Do not rela
 
 Route handlers load the data, call these functions and map the result to HTTP.
 
+The inputs are plain types in `scheduling/types.ts`, never Prisma types, so Prisma rows fit them as they are. Every check (`validateBooking`, `canMarkDayOff`, `canCancel`) returns a result instead of throwing: `{ ok: true, ... }` or `{ ok: false, code, message, details? }`, where `code` is an error code from `api-conventions` and `message` is in Bulgarian. The route throws `new AppError(code, message, details)` from a failure. The overlap rule and the 30-minute grid live in `scheduling/intervals.ts`, shared by the slots and the booking check.
+
 ## Time model
 
 | Value | Stored as |
@@ -40,9 +42,9 @@ The function returns the free start times as UTC ISO strings, in ascending order
 
 The slots endpoint responds with `{ date, dayOff: boolean, slots: string[] }`.
 
-## `validateBooking(...)`
+## `validateBooking({ manicuristId, service, startAt, workingHours, daysOff, bookings, now })`
 
-The server re-checks everything and never trusts the client. Return the first failure found:
+The server re-checks everything and never trusts the client. `service` is `null` when it does not exist. On success the function returns `{ ok: true, endAt }`. Return the first failure found:
 
 | Check | Code | HTTP |
 |-------|------|------|
@@ -52,9 +54,13 @@ The server re-checks everything and never trusts the client. Return the first fa
 | The start is after `now` | `SLOT_INVALID` | 400 |
 | No overlap with an active booking | `SLOT_TAKEN` | 409 |
 
+The date and time of the start are its Sofia date and minutes (`utcToSofia`). A start is on the grid only when its minutes are a multiple of 30 and `sofiaToUtc` gives back the same instant. This rejects seconds and the second occurrence of a repeated local hour, which `calculateAvailableSlots` never offers either.
+
 `POST /api/bookings` loads the data, validates and inserts inside one `prisma.$transaction`. The client never sends `endAt`. The server computes it from the service duration. If two clients race for the same slot, the loser gets `409 SLOT_TAKEN`.
 
 ## Days off
+
+`canMarkDayOff(date, daysOff, bookings, now)` checks the allowed date, one per date and existing bookings, in this order. The caller passes only the active days off. It is generic over the booking type and returns the bookings on that date in `details.bookings` as they were passed, so the route keeps their id, service and client.
 
 - **Allowed dates:** only today or a future date, in Sofia time. Anything else is `SLOT_INVALID`, with a message about the date.
 - **Active days off only:** a day off counts only while `deletedAt` is null. Load days off with `deletedAt: null` everywhere they are used.
@@ -63,6 +69,8 @@ The server re-checks everything and never trusts the client. Return the first fa
 - **Removing:** deleting a day off sets `deletedAt` and reopens the date. The row is never deleted. Only the owning manicurist can remove it.
 
 ## Cancel
+
+`canCancel(booking, userId, now)` returns `{ ok: true, cancelledBy }`. It checks who before what, so a stranger learns nothing about the booking.
 
 - **Who:** only the booking's client or its manicurist can cancel. Anyone else gets `403 FORBIDDEN`.
 - **What:** only a booking with status `BOOKED` and `startAt > now` can be cancelled. Anything else gets `409 NOT_CANCELLABLE`.

@@ -38,8 +38,15 @@ jobs:
       - name: Typecheck client
         run: npm run typecheck -w client
 
-      - name: Test
-        run: npm test
+      # Two steps, so the failing part shows in the step list. Every test file
+      # lives in tests/unit or tests/api (see the testing skill).
+      - name: Unit tests
+        working-directory: server
+        run: npx vitest run tests/unit
+
+      - name: API tests
+        working-directory: server
+        run: npx vitest run tests/api
 
       - name: Build client
         run: npm run build -w client

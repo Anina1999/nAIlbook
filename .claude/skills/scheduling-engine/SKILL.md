@@ -25,7 +25,7 @@ Route handlers load the data, call these functions and map the result to HTTP.
 | Day off, `date` query param | Sofia-local `YYYY-MM-DD` string |
 | API responses | UTC ISO strings |
 
-The slot grid is 30 minutes, aligned to the Sofia clock (:00 and :30). Working hours are saved only on 30-minute boundaries, and the API rejects any other value. Daylight-saving days are handled by building local times and converting them through `lib/time.ts`. Never add fixed offsets.
+The slot grid is 30 minutes, aligned to the Sofia clock (:00 and :30). Working hours are saved only on 30-minute boundaries, and the API rejects any other value. Daylight-saving days are handled by building local times and converting them through `lib/time.ts`. Never add fixed offsets. On the spring switch day a local time between 03:00 and 04:00 does not exist, and `sofiaToUtc` moves it forward by the gap. On the autumn switch day such a time happens twice, and `sofiaToUtc` takes the first occurrence.
 
 ## `calculateAvailableSlots(service, date, workingHours, daysOff, bookings, now)`
 

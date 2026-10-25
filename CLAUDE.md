@@ -18,6 +18,7 @@ nAIlbook is a manicure booking platform. Clients find a manicurist by city and s
 | `ui-conventions` | Everything in `client/` |
 | `ui-design` | How the client looks and how its text reads: colour and font tokens, spacing, components, states, motion, UI wording |
 | `testing` | Test layout, Vitest config, the test database, helpers, dates in tests, the Postman collection |
+| `refactor` | Behaviour-preserving refactors: logic in the wrong file, extracting handlers and reusable functions, code smells, the plan and small verified steps |
 
 If the code has to differ from a skill, stop and ask. When the change is agreed, update the skill in the same change.
 
@@ -80,8 +81,8 @@ Project skills live in `.claude/skills/<name>/SKILL.md` and project agents in `.
 
 | Agent | Owns | Reads skills |
 |-------|------|--------------|
-| `backend-developer` | `server/`, `docs/postman/` | `api-conventions`, `data-model`, `scheduling-engine`, `testing` |
-| `frontend-developer` | `client/` | `ui-conventions`, `ui-design`, plus the server skills to use the API correctly |
+| `backend-developer` | `server/`, `docs/postman/` | `api-conventions`, `data-model`, `scheduling-engine`, `testing`, `refactor` |
+| `frontend-developer` | `client/` | `ui-conventions`, `ui-design`, `refactor`, plus the server skills to use the API correctly |
 
 Each agent reads a skill when its task touches that area. Neither edits `.claude/`, `.github/`, this file, `docs/architecture.md`, the root `package.json` or the lock file. Neither installs packages, runs the dev server or commits.
 

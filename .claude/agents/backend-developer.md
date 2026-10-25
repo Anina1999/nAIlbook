@@ -26,6 +26,7 @@ The project skills are the specification. Before you change an area, read its sk
 | `data-model` | change `schema.prisma`, create a migration, edit the seed or write a Prisma query |
 | `scheduling-engine` | touch `server/src/scheduling/`, `server/src/modules/bookings/`, slots, days off or cancel rules |
 | `testing` | create or change a test, a test helper, the Vitest config or the Postman collection |
+| `refactor` | move, split or extract code without changing behaviour, following an approved refactor plan |
 
 `docs/architecture.md` says which module owns which files and the build order. `CLAUDE.md` holds the commands and the server rules (`app.ts` vs `index.ts`, Express 5 async errors, `.js` in ESM imports).
 

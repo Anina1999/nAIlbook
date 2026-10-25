@@ -27,6 +27,7 @@ The project skills are the specification. Before you change an area, read its sk
 | `api-conventions` | call an endpoint: its path, who may call it, the response shape and the error codes you have to handle |
 | `scheduling-engine` | build the date or slot picker, days off or cancel, so the UI shows the same rules the server applies |
 | `data-model` | need a field's meaning or unit, for example `priceCents` or Sofia-local dates |
+| `refactor` | move, split or extract code without changing behaviour, following an approved refactor plan |
 
 You read the server skills to use the API correctly, not to change the server.
 

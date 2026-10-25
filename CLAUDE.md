@@ -16,6 +16,7 @@ nAIlbook is a manicure booking platform. Clients find a manicurist by city and s
 | `data-model` | `schema.prisma`, migrations, field conventions, the seed, Prisma queries |
 | `scheduling-engine` | Free-slot calculation, booking validation, days off, cancel rules, the time model |
 | `ui-conventions` | Everything in `client/` |
+| `ui-design` | How the client looks and how its text reads: colour and font tokens, spacing, components, states, motion, UI wording |
 | `testing` | Test layout, Vitest config, the test database, helpers, dates in tests, the Postman collection |
 
 If the code has to differ from a skill, stop and ask. When the change is agreed, update the skill in the same change.
@@ -31,7 +32,7 @@ If the code has to differ from a skill, stop and ask. When the change is agreed,
 | Auth | JWT and bcrypt |
 | Validation | zod |
 | Tests | Vitest, Supertest |
-| Approved extras | `cors` (server), `tsx` (server dev runner), `concurrently` (root, runs client and server together), `@prisma/adapter-better-sqlite3` + `better-sqlite3` (server, the SQLite driver Prisma 7 requires) |
+| Approved extras | `cors` (server), `tsx` (server dev runner), `concurrently` (root, runs client and server together), `@prisma/adapter-better-sqlite3` + `better-sqlite3` (server, the SQLite driver Prisma 7 requires), the Sofia Sans font from Google Fonts (client, a `<link>` in `index.html`, see `ui-design`) |
 
 Ask before adding a dependency that is not on this list. Type packages (`@types/*`) and build plugins for the listed tools (`@vitejs/plugin-react`, `@tailwindcss/vite`) count as part of the stack.
 
@@ -76,3 +77,21 @@ Prisma is 7.x: the config is in `server/prisma.config.ts`, the client is generat
 ## Skills and agents
 
 Project skills live in `.claude/skills/<name>/SKILL.md` and project agents in `.claude/agents/<name>.md`. Implementation rules belong in a skill or in architecture.md, not only in this file.
+
+| Agent | Owns | Reads skills |
+|-------|------|--------------|
+| `backend-developer` | `server/`, `docs/postman/` | `api-conventions`, `data-model`, `scheduling-engine`, `testing` |
+| `frontend-developer` | `client/` | `ui-conventions`, `ui-design`, plus the server skills to use the API correctly |
+
+Each agent reads a skill when its task touches that area. Neither edits `.claude/`, `.github/`, this file, `docs/architecture.md`, the root `package.json` or the lock file. Neither installs packages, runs the dev server or commits.
+
+### A feature with both agents
+
+When a feature needs both the server and the client:
+
+1. **Agree on the API contract first.** Take the endpoints, request and response shapes and error codes from `api-conventions`. If the feature needs something the skill does not have yet, such as a response shape, agree it with the user and write it into the skill before the agents start.
+2. **Start both agents in parallel.** Give each one the feature, its part and the same contract. They touch separate folders, so they do not block each other.
+3. **Check the result.** Read both reports, then run `npm test`, `npm run typecheck -w server`, `npm run typecheck -w client` and `npm run build -w client`, and try the feature by hand.
+4. **Handle the open points.** Take the agents' questions and skill proposals to the user. A proposed skill is created or extended only after the user agrees, in the same change as the code it affects. If the backend report shows an API that differs from the contract, either the code or `api-conventions` changes in the same change.
+
+A feature that touches only one side uses only that agent.

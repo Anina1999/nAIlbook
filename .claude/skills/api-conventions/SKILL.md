@@ -77,6 +77,19 @@ Add a new code here before you use it.
 
 Times in responses are UTC ISO strings. Dates are `YYYY-MM-DD`.
 
+### Response shapes
+
+This list is the contract the client codes against. Write the shape of a new endpoint here when it is agreed, before the client uses it, or at the latest in the change that builds it. If the code returns something else, fix the code or update this list in the same change.
+
+| Endpoint | Success response |
+|----------|------------------|
+| `POST /api/auth/register` | `201 { token, user }` |
+| `POST /api/auth/login` | `200 { token, user }` |
+| `GET /api/auth/me` | `200 { user }` |
+| `POST /api/auth/logout` | `204`, no body |
+
+`user` is `{ id, email, name, phone, role }`.
+
 ## Config
 
 Settings are read from `server/.env`: `DATABASE_URL`, `JWT_SECRET` and `PORT`. `src/lib/config.ts` throws when `JWT_SECRET` is missing, so the server does not start without it. Keep `server/.env.example` in sync, and never commit `.env`.

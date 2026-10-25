@@ -7,6 +7,8 @@ description: Conventions for nAIlbook's React client, covering folder structure,
 
 The stack is React, TypeScript, Vite, React Router and Tailwind CSS.
 
+This skill covers structure and behaviour. How screens look (colour and font tokens, spacing, components, states, motion) and how UI text is written is in the `ui-design` skill.
+
 ## Structure
 
 ```
@@ -47,4 +49,8 @@ Components call the wrapper in `client/src/api/`, never a raw `fetch`.
 - **Prices:** show prices as `35 €`.
 - **Errors:** show the server's `message`. Show field errors from `VALIDATION_ERROR` next to their inputs.
 - **Responsive layout:** design mobile-first with Tailwind. Every screen must work at 375px width.
-- **Accessibility basics:** every input has a label, buttons are real `<button>` elements, and disabled dates and slots are actually `disabled`.
+- **Accessibility basics:**
+  - every input has a label, buttons are real `<button>` elements, and disabled dates and slots are actually `disabled`;
+  - every flow works with the keyboard alone, and focus is visible (`focus-visible:` ring classes, never `outline-none` without a replacement);
+  - a button with only an icon has an `aria-label` in Bulgarian, and the icon has `aria-hidden="true"`;
+  - text has a contrast of at least 4.5:1 against its background.

@@ -57,14 +57,17 @@ model ManicuristProfile {
   bookings     Booking[]
 }
 
+// Removing a service sets deletedAt: bookings keep pointing to it, and every
+// read of services filters deletedAt: null.
 model Service {
-  id           Int      @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   manicuristId Int
   name         String
   description  String?
   durationMin  Int
   priceCents   Int
-  updatedAt    DateTime @updatedAt
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
 
   manicurist ManicuristProfile @relation(fields: [manicuristId], references: [userId])
   bookings   Booking[]

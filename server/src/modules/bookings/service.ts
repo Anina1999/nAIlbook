@@ -60,10 +60,10 @@ function serviceNotFound() {
 
 export async function getSlots(manicuristId: number, serviceId: number, date: string, now: Date) {
   const service = await prisma.service.findUnique({
-    where: { id: serviceId },
+    where: { id: serviceId, deletedAt: null },
     select: { durationMin: true, manicuristId: true },
   });
-  // Also covers an unknown manicurist: no service belongs to them.
+  // Also covers a removed service and an unknown manicurist: no service belongs to them.
   if (!service || service.manicuristId !== manicuristId) throw serviceNotFound();
 
   const { workingHours, daysOff, bookings } = await loadDay(prisma, manicuristId, date);
@@ -77,7 +77,8 @@ export async function getSlots(manicuristId: number, serviceId: number, date: st
 export async function createBooking(clientId: number, input: CreateBookingInput, now: Date) {
   return prisma.$transaction(async (tx) => {
     const service = await tx.service.findUnique({
-      where: { id: input.serviceId },
+      // A removed service is missing, so validateBooking answers NOT_FOUND.
+      where: { id: input.serviceId, deletedAt: null },
       select: { id: true, name: true, durationMin: true, priceCents: true, manicuristId: true },
     });
     const day = await loadDay(tx, input.manicuristId, utcToSofia(input.startAt).date);

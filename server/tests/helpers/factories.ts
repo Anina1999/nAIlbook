@@ -59,6 +59,21 @@ export function createManicurist(overrides: ManicuristOverrides = {}) {
 
 type Manicurist = Awaited<ReturnType<typeof createManicurist>>;
 
+type ServiceOverrides = {
+  name?: string;
+  description?: string | null;
+  durationMin?: number;
+  priceCents?: number;
+  deletedAt?: Date;
+};
+
+// One more service of the manicurist: active, or removed when deletedAt is passed.
+export function createService(manicurist: { id: number }, overrides: ServiceOverrides = {}) {
+  return prisma.service.create({
+    data: { name: 'Гел лак', durationMin: 90, priceCents: 4000, ...overrides, manicuristId: manicurist.id },
+  });
+}
+
 type BookingOverrides = {
   startAt?: Date;
   status?: BookingStatus;

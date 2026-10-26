@@ -14,25 +14,27 @@ const password = z
 
 const requiredText = (message: string) => z.string().trim().min(1, { error: message });
 
-const accountFields = {
-  email,
-  password,
+// Shared with PUT /api/me/profile (catalog), so editing a profile follows the
+// same rules as registering it.
+export const contactFields = {
   name: requiredText('Въведете име.'),
   phone: requiredText('Въведете телефон.'),
 };
+
+export const profileFields = {
+  city: requiredText('Въведете град.'),
+  address: requiredText('Въведете адрес.'),
+  bio: z.string().trim().default(''),
+};
+
+const accountFields = { email, password, ...contactFields };
 
 // ADMIN cannot be chosen at registration: only these two roles are accepted.
 export const registerSchema = z.discriminatedUnion(
   'role',
   [
     z.object({ ...accountFields, role: z.literal('CLIENT') }),
-    z.object({
-      ...accountFields,
-      role: z.literal('MANICURIST'),
-      city: requiredText('Въведете град.'),
-      address: requiredText('Въведете адрес.'),
-      bio: z.string().trim().default(''),
-    }),
+    z.object({ ...accountFields, role: z.literal('MANICURIST'), ...profileFields }),
   ],
   { error: 'Изберете тип акаунт: клиент или маникюрист.' },
 );

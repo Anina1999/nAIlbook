@@ -74,7 +74,8 @@ The date and time of the start are its Sofia date and minutes (`utcToSofia`). A 
 
 - **Who:** only the booking's client or its manicurist can cancel. Anyone else gets `403 FORBIDDEN`.
 - **What:** only a booking with status `BOOKED` and `startAt > now` can be cancelled. Anything else gets `409 NOT_CANCELLABLE`.
-- **Effect:** set `status = CANCELLED` and `cancelledBy = CLIENT | MANICURIST`. Never delete the row.
+- **Reason:** every cancel, by the client or the manicurist, needs a reason. The route validates it with zod (trimmed, 1–200 characters) before any other check; `canCancel` does not see it.
+- **Effect:** set `status = CANCELLED`, `cancelledBy = CLIENT | MANICURIST` and `cancelReason`. Never delete the row.
 
 ## Required tests
 

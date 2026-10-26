@@ -15,3 +15,8 @@ export function slotAt(date: string, time: string): string {
   const [hour, minute] = time.split(':').map(Number);
   return sofiaToUtc(date, hour * 60 + minute).toISOString();
 }
+
+// The Sofia date this many days before today, as "YYYY-MM-DD". For past bookings.
+export function daysAgo(days: number): string {
+  return addDays(todayInSofia(new Date()), -days);
+}

@@ -81,10 +81,10 @@ Project skills live in `.claude/skills/<name>/SKILL.md` and project agents in `.
 
 | Agent | Owns | Reads skills |
 |-------|------|--------------|
-| `backend-developer` | `server/`, `docs/postman/` | `api-conventions`, `data-model`, `scheduling-engine`, `testing`, `refactor` |
-| `frontend-developer` | `client/` | `ui-conventions`, `ui-design`, `refactor`, plus the server skills to use the API correctly |
+| `backend-developer` | `server/`, `docs/postman/`, the skills `api-conventions`, `data-model`, `scheduling-engine` and `testing` | `api-conventions`, `data-model`, `scheduling-engine`, `testing`, `refactor` |
+| `frontend-developer` | `client/`, the skills `ui-conventions` and `ui-design`, and the mirrored sections of `.github/copilot-instructions.md` | `ui-conventions`, `ui-design`, `refactor`, plus the server skills to use the API correctly |
 
-Each agent reads a skill when its task touches that area. Neither edits `.claude/`, `.github/`, this file, `docs/architecture.md`, the root `package.json` or the lock file. Neither installs packages, runs the dev server or commits.
+Each agent reads a skill when its task touches that area. An agent may update the skills it owns, but only to record what the brief already settled (a response shape, a field limit, a new helper). A change to a rule is a deviation: the agent stops and reports it, and the user decides. Neither agent creates a new skill, edits the agents, the other skills, the rest of `.github/`, this file or `docs/architecture.md`, or touches the root `package.json` or the lock file. Neither installs packages, runs the dev server or commits.
 
 ### A feature with both agents
 
@@ -96,3 +96,11 @@ When a feature needs both the server and the client:
 4. **Handle the open points.** Take the agents' questions and skill proposals to the user. A proposed skill is created or extended only after the user agrees, in the same change as the code it affects. If the backend report shows an API that differs from the contract, either the code or `api-conventions` changes in the same change.
 
 A feature that touches only one side uses only that agent.
+
+### Delegating a slice
+
+Server or client work with an agreed contract goes to the matching agent. The main session keeps what needs the user and the project record:
+
+1. **The main session plans.** It writes the plan, runs `prompt-review` and holds every stop for the user's approval: the contract, the tests first, the go-ahead.
+2. **The agent gets a short brief with no stops in it:** the contract, the list of tests and what "done" means. To show the user the red tests first, delegate in two steps: first "write only the tests and report", then, after the user approves, "implement".
+3. **The main session finishes.** It reads the agent's report, runs `npm test` and the typechecks, keeps the project's notes up to date, commits and opens the PR. The prompt that is recorded is the one the user approved; the brief is derived from it.

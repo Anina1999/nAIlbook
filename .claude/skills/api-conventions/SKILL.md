@@ -49,7 +49,7 @@ Add a new code here before you use it.
 - The JWT payload is `{ sub: userId, role, tokenVersion }`, signed with HS256 (the only algorithm `verify` accepts) and valid for 1 day. `src/lib/jwt.ts` signs and verifies it. The client sends `Authorization: Bearer <token>`.
 - **Revocation:** `requireAuth` loads the user and rejects the token with `401 UNAUTHORIZED` when the user no longer exists or `tokenVersion` differs from the database. `POST /api/auth/logout` increments `tokenVersion`, so every token of that user stops working at once, on all devices.
 - `requireAuth` sets `req.user = { id, role }`, with the role from the database. `requireRole('MANICURIST')` checks the role and goes after `requireAuth`.
-- **Ownership:** every write checks that the row belongs to `req.user.id`. Checking the role alone is not enough.
+- **Ownership:** every write checks that the row belongs to `req.user.id`. Checking the role alone is not enough. The service checks it after validation: a missing or soft-deleted row is `404 NOT_FOUND`, someone else's row is `403 FORBIDDEN`. `/api/me/*` routes act on the logged-in manicurist's own data and never take a manicurist id.
 - Registration accepts the role `CLIENT` or `MANICURIST`, never `ADMIN`. A manicurist also sends `city` and `address` (required) and `bio` (optional, default `""`), and the `ManicuristProfile` is created in the same nested create as the user.
 
 ## Endpoints
@@ -87,7 +87,14 @@ This list is the contract the client codes against. Write the shape of a new end
 | `POST /api/auth/login` | `200 { token, user }` |
 | `GET /api/auth/me` | `200 { user }` |
 | `POST /api/auth/logout` | `204`, no body |
-| `GET /api/manicurists/:id/slots?serviceId=&date=` | `200 { date, dayOff, slots }`. `slots` are UTC ISO start times. `404 NOT_FOUND` when the service does not belong to that manicurist. |
+| `GET /api/manicurists?city=&service=` | `200 { manicurists: [{ id, name, city, imageUrl, services: [{ id, name, durationMin, priceCents }] }] }`. Both parameters are optional; an empty or blank one is no filter. `city` matches part of the city and `service` part of an active service name, ignoring case, filtered in JS with `toLocaleLowerCase('bg')` and `includes` (SQLite ignores case only for ASCII). Manicurists and their services are sorted by name (`localeCompare` with `'bg'`). A repeated parameter is `400 VALIDATION_ERROR`. |
+| `GET /api/manicurists/:id` | `200 { manicurist }`. `404 NOT_FOUND` for an unknown id or a user who is not a manicurist. |
+| `GET /api/manicurists/:id/slots?serviceId=&date=` | `200 { date, dayOff, slots }`. `slots` are UTC ISO start times. `404 NOT_FOUND` when the service is removed or does not belong to that manicurist. |
+| `PUT /api/me/profile`, body `{ name, phone, city, address, bio }` | `200 { manicurist }`. The fields follow the registration rules (`contactFields` and `profileFields` in `modules/auth/schemas.ts`): name, phone, city and address trimmed and required, `bio` trimmed and optional (default `""`). Name and phone are saved in `User`, the rest in `ManicuristProfile`, in one transaction. |
+| `POST /api/me/services`, body `{ name, description, durationMin, priceCents }` | `201 { service }` |
+| `PUT /api/me/services/:id`, the same body (every field again) | `200 { service }`. `403 FORBIDDEN` for another manicurist's service, `404 NOT_FOUND` for a removed or unknown one. Bookings keep their own `serviceName` and `priceCents`. |
+| `DELETE /api/me/services/:id` | `204`, no body. A soft delete (sets `deletedAt`), with the same `403` and `404` as `PUT`. |
+| `PUT /api/me/working-hours`, body `{ workingHours: [{ weekday, startMin, endMin }] }` | `200 { workingHours }`, by weekday. Replaces the whole week in one transaction; an empty list means no working day. Existing bookings are not checked and stay, even outside the new hours. |
 | `POST /api/bookings`, body `{ manicuristId, serviceId, startAt }` | `201 { booking }` |
 | `GET /api/bookings/mine` | `200 { upcoming, past }`, both `booking[]`. A booking is upcoming until it ends (`endAt >= now`), soonest first; past ones latest first. Cancelled bookings are included. |
 | `GET /api/bookings/schedule?date=` | `200 { date, bookings }`: the manicurist's bookings on that Sofia date by start time, cancelled ones included |
@@ -96,6 +103,21 @@ This list is the contract the client codes against. Write the shape of a new end
 `user` is `{ id, email, name, phone, role }`.
 
 `booking` is `{ id, startAt, endAt, status, cancelledBy, cancelReason, serviceId, serviceName, priceCents, client: { id, name, phone }, manicurist: { id, name, phone, city, address } }`. `cancelledBy` and `cancelReason` are `null` while it is `BOOKED`. `serviceName` and `priceCents` are the snapshot from booking time; `serviceId` lets the client book the same service again. The nested users never carry an email.
+
+`manicurist` is `{ id, name, phone, city, address, bio, imageUrl, services, workingHours }`: active services by name, `workingHours` as `{ weekday, startMin, endMin }` by weekday. No email. `imageUrl` is read-only for now.
+
+`service` is `{ id, name, description, durationMin, priceCents }`.
+
+Field rules for the manicurist's editors:
+
+| Field | Rule |
+|-------|------|
+| `service.name` | trimmed, 1–80 characters |
+| `service.description` | trimmed, up to 300 characters, optional; empty, blank, `null` or missing is saved as `null` |
+| `service.durationMin` | whole minutes, a multiple of 15, from 15 to 480 |
+| `service.priceCents` | whole cents, from 0 to 100000 (1000 €) |
+| `workingHours[].weekday` | 0–6 (0 = Sunday), each at most once |
+| `workingHours[].startMin`, `endMin` | multiples of 30, `0 <= startMin < endMin <= 1440` |
 
 ## Config
 

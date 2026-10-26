@@ -44,7 +44,7 @@ The slots endpoint responds with `{ date, dayOff: boolean, slots: string[] }`.
 
 ## `validateBooking({ manicuristId, service, startAt, workingHours, daysOff, bookings, now })`
 
-The server re-checks everything and never trusts the client. `service` is `null` when it does not exist. On success the function returns `{ ok: true, endAt }`. Return the first failure found:
+The server re-checks everything and never trusts the client. `service` is `null` when it does not exist or is removed (`deletedAt` set). On success the function returns `{ ok: true, endAt }`. Return the first failure found:
 
 | Check | Code | HTTP |
 |-------|------|------|

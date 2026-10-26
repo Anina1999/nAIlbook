@@ -14,7 +14,8 @@ User              id, email (unique), passwordHash, name, phone,
                   role (CLIENT | MANICURIST | ADMIN), tokenVersion (Int, default 0),
                   createdAt, updatedAt
 ManicuristProfile userId (PK, FK User), city, address, bio, imageUrl?, updatedAt
-Service           id, manicuristId (FK), name, description?, durationMin, priceCents, updatedAt
+Service           id, manicuristId (FK), name, description?, durationMin, priceCents, updatedAt,
+                  deletedAt?
 WorkingHours      id, manicuristId (FK), weekday (0–6, 0 = Sunday), startMin, endMin, updatedAt
                   unique(manicuristId, weekday)
 DayOff            id, manicuristId (FK), date (String "YYYY-MM-DD", Sofia local), createdAt,
@@ -42,6 +43,7 @@ Booking           id, clientId (FK), manicuristId (FK), serviceId (FK),
 - **No hard deletes for bookings.** Cancelling sets `status = CANCELLED`, `cancelledBy` and `cancelReason`, the reason the client or the manicurist gave. Every cancel has a reason, so both fields are null only while the booking is `BOOKED`.
 - **Booking snapshot.** When a booking is created, copy the service's `name` and `priceCents` into `serviceName` and `priceCents`. Show and report these, not the current service values, so later price or name changes do not rewrite history. The duration is already fixed by `startAt` and `endAt`.
 - **Days off are soft-deleted.** Removing a day off sets `deletedAt`. Every read of days off (slots, booking validation, the public list, `/me/days-off`) filters `deletedAt: null`. Marking a date that has a removed row clears `deletedAt` on that row instead of inserting, because `(manicuristId, date)` is unique.
+- **Services are soft-deleted.** Removing a service sets `deletedAt`, because bookings point to it with a foreign key and keep their own snapshot. Every read of services filters `deletedAt: null`: search, the public manicurist page, the profile returned by `PUT /api/me/profile`, the ownership check before an edit or a removal, slots and booking validation. A removed service is answered with `404 NOT_FOUND`. The seed creates only active services.
 - **Prisma is limited to modules.** Prisma calls belong in `service.ts` files and never in `server/src/scheduling/`.
 - **Schema changes:**
   - change the schema with `npx prisma migrate dev --name <change>`;

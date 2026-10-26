@@ -23,7 +23,7 @@ DayOff            id, manicuristId (FK), date (String "YYYY-MM-DD", Sofia local)
 Booking           id, clientId (FK), manicuristId (FK), serviceId (FK),
                   serviceName, priceCents (copied from the service when booking),
                   startAt, endAt (UTC DateTime), status (BOOKED | CANCELLED),
-                  cancelledBy (CLIENT | MANICURIST)?, createdAt, updatedAt
+                  cancelledBy (CLIENT | MANICURIST)?, cancelReason?, createdAt, updatedAt
                   index(manicuristId, startAt)
 ```
 
@@ -39,7 +39,7 @@ Booking           id, clientId (FK), manicuristId (FK), serviceId (FK),
   - prices are whole euro cents in an `Int` (`priceCents`), everywhere: the database, the API and the client state. The client divides by 100 only to display a price and multiplies by 100 on input. Do not use `Decimal`, because Prisma serializes it as a string in JSON.
 - **Enums:** `role`, `status` and `cancelledBy` use Prisma enums if the installed Prisma version supports them on SQLite. Otherwise use `String` and validate the values with zod.
 - **`tokenVersion`** is copied into every JWT. Logout increments it, which revokes all of the user's tokens (see `api-conventions`). Nothing else changes it.
-- **No hard deletes for bookings.** Cancelling sets `status = CANCELLED`.
+- **No hard deletes for bookings.** Cancelling sets `status = CANCELLED`, `cancelledBy` and `cancelReason`, the reason the client or the manicurist gave. Every cancel has a reason, so both fields are null only while the booking is `BOOKED`.
 - **Booking snapshot.** When a booking is created, copy the service's `name` and `priceCents` into `serviceName` and `priceCents`. Show and report these, not the current service values, so later price or name changes do not rewrite history. The duration is already fixed by `startAt` and `endAt`.
 - **Days off are soft-deleted.** Removing a day off sets `deletedAt`. Every read of days off (slots, booking validation, the public list, `/me/days-off`) filters `deletedAt: null`. Marking a date that has a removed row clears `deletedAt` on that row instead of inserting, because `(manicuristId, date)` is unique.
 - **Prisma is limited to modules.** Prisma calls belong in `service.ts` files and never in `server/src/scheduling/`.

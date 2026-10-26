@@ -1,4 +1,6 @@
 import bcrypt from 'bcrypt';
+import type { BookingStatus, CancelledBy } from '../../src/generated/prisma/enums.js';
+import { nextWeekday, slotAt } from './dates.js';
 import { prisma } from './db.js';
 
 // The password of every user the factories create.
@@ -53,4 +55,42 @@ export function createManicurist(overrides: ManicuristOverrides = {}) {
     },
     include: { profile: { include: { workingHours: true, services: true } } },
   });
+}
+
+type Manicurist = Awaited<ReturnType<typeof createManicurist>>;
+
+type BookingOverrides = {
+  startAt?: Date;
+  status?: BookingStatus;
+  cancelledBy?: CancelledBy;
+  cancelReason?: string;
+};
+
+// A booking of the manicurist's first service, inserted directly without
+// validation, so tests can set up past and cancelled bookings. The default
+// start is next Monday at 10:00 Sofia time.
+export function createBooking(
+  client: { id: number },
+  manicurist: Manicurist,
+  overrides: BookingOverrides = {},
+) {
+  const service = manicurist.profile!.services[0];
+  const { startAt = new Date(slotAt(nextWeekday(1), '10:00')), ...rest } = overrides;
+  return prisma.booking.create({
+    data: {
+      clientId: client.id,
+      manicuristId: manicurist.id,
+      serviceId: service.id,
+      serviceName: service.name,
+      priceCents: service.priceCents,
+      startAt,
+      endAt: new Date(startAt.getTime() + service.durationMin * 60_000),
+      ...rest,
+    },
+  });
+}
+
+// An active day off, or a removed one when deletedAt is passed.
+export function createDayOff(manicurist: { id: number }, date: string, overrides: { deletedAt?: Date } = {}) {
+  return prisma.dayOff.create({ data: { manicuristId: manicurist.id, date, ...overrides } });
 }

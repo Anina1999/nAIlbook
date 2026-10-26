@@ -87,8 +87,15 @@ This list is the contract the client codes against. Write the shape of a new end
 | `POST /api/auth/login` | `200 { token, user }` |
 | `GET /api/auth/me` | `200 { user }` |
 | `POST /api/auth/logout` | `204`, no body |
+| `GET /api/manicurists/:id/slots?serviceId=&date=` | `200 { date, dayOff, slots }`. `slots` are UTC ISO start times. `404 NOT_FOUND` when the service does not belong to that manicurist. |
+| `POST /api/bookings`, body `{ manicuristId, serviceId, startAt }` | `201 { booking }` |
+| `GET /api/bookings/mine` | `200 { upcoming, past }`, both `booking[]`. A booking is upcoming until it ends (`endAt >= now`), soonest first; past ones latest first. Cancelled bookings are included. |
+| `GET /api/bookings/schedule?date=` | `200 { date, bookings }`: the manicurist's bookings on that Sofia date by start time, cancelled ones included |
+| `PATCH /api/bookings/:id/cancel`, body `{ reason }` | `200 { booking }`. `reason` is required, trimmed, 1–200 characters. |
 
 `user` is `{ id, email, name, phone, role }`.
+
+`booking` is `{ id, startAt, endAt, status, cancelledBy, cancelReason, serviceId, serviceName, priceCents, client: { id, name, phone }, manicurist: { id, name, phone, city, address } }`. `cancelledBy` and `cancelReason` are `null` while it is `BOOKED`. `serviceName` and `priceCents` are the snapshot from booking time; `serviceId` lets the client book the same service again. The nested users never carry an email.
 
 ## Config
 

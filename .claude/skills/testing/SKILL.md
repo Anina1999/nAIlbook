@@ -48,14 +48,16 @@ Name files `<area>.test.ts`. Use one `describe` per endpoint (`describe('POST /a
 ## Helpers
 
 - **Factories** take an optional overrides object and return the created row. `createManicurist()` also creates the profile, working hours Monday to Friday 09:00–18:00 and one 60-minute service, so a booking test needs one call.
+- `createBooking(client, manicurist, overrides)` inserts a booking of the manicurist's first service directly, without validation, so a test can set up past, started and cancelled bookings. The default start is next Monday at 10:00. `createDayOff(manicurist, date, { deletedAt? })` creates an active or a removed day off.
 - **Auth:** `tokenFor(user)` and `authHeader(user)` sign a JWT through the app's own `signToken`, so the payload is always the app's `{ sub, role, tokenVersion }`. Pass a user row straight from a factory. Only the auth tests go through `/register` and `/login`. Every other test uses `tokenFor`.
 - Passwords in factories are hashed with a low bcrypt cost (4) to keep tests fast. Every factory user has the password `TEST_PASSWORD`.
+- **Races** are tested on the service, not through HTTP. Supertest requests reach the database one after another, so an HTTP race test passes even without the transaction. `tests/api/bookings-race.test.ts` calls `createBooking` several times at once and expects one booking and `SLOT_TAKEN` for the rest; it fails when the transaction is removed.
 - Code that needs a role check but has no real endpoint yet is tested on a small Express app built inside the test file, never on a fake route added to `app`.
 
 ## Dates and time
 
 - **Unit tests** pass a fixed `now` and fixed dates. They never read the real clock.
-- **API tests** use the real clock, because the endpoints read it. Never hardcode a calendar date in an API test. Use `dates.ts` helpers such as `nextWeekday(1)` (the next Monday at least 2 days ahead, as a Sofia `YYYY-MM-DD`) and `slotAt(date, '10:00')` (a UTC ISO string). Both go through `server/src/lib/time.ts`.
+- **API tests** use the real clock, because the endpoints read it. Never hardcode a calendar date in an API test. Use `dates.ts` helpers such as `nextWeekday(1)` (the next Monday at least 2 days ahead, as a Sofia `YYYY-MM-DD`) and `slotAt(date, '10:00')` (a UTC ISO string), and `daysAgo(7)` for a past date. They go through `server/src/lib/time.ts`.
 - Do not use fake timers in API tests.
 - `lib/time.ts` has unit tests for both daylight-saving switch days (the last Sunday of March and of October).
 

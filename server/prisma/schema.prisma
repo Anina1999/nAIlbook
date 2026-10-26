@@ -100,7 +100,8 @@ model DayOff {
 
 // startAt and endAt are UTC. Bookings are never deleted, only cancelled.
 // serviceName and priceCents are copied from the service when booking, so
-// later service edits do not rewrite history.
+// later service edits do not rewrite history. Every cancel saves cancelledBy
+// and the reason the client or the manicurist gave (cancelReason).
 model Booking {
   id           Int           @id @default(autoincrement())
   clientId     Int
@@ -112,7 +113,8 @@ model Booking {
   endAt        DateTime
   status       BookingStatus @default(BOOKED)
   cancelledBy  CancelledBy?
-  createdAt    DateTime      @default(now())
+  cancelReason String?
+  createdAt   DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
   client     User              @relation(fields: [clientId], references: [id])

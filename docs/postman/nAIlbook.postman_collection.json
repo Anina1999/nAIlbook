@@ -6,7 +6,15 @@
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:3000" },
-    { "key": "clientToken", "value": "" }
+    { "key": "clientToken", "value": "" },
+    { "key": "manicuristToken", "value": "" },
+    { "key": "manicuristId", "value": "" },
+    { "key": "serviceId", "value": "" },
+    { "key": "seedStartAt", "value": "" },
+    { "key": "bookingDate", "value": "" },
+    { "key": "slotStartAt", "value": "" },
+    { "key": "offGridStartAt", "value": "" },
+    { "key": "newBookingId", "value": "" }
   ],
   "item": [
     {
@@ -279,6 +287,381 @@
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
             "url": "{{baseUrl}}/api/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "description": "Runs against a fresh seed. It finds the demo client's upcoming booking with the demo manicurist (Maria), books the first free slot on that day and cancels it again, so the folder can be run any number of times.",
+      "item": [
+        {
+          "name": "Login as the demo client (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('clientToken', pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"client@example.com\",\n  \"password\": \"nailbook123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Login as the demo manicurist (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const { token, user } = pm.response.json();",
+                  "pm.collectionVariables.set('manicuristToken', token);",
+                  "pm.collectionVariables.set('manicuristId', user.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"maria@example.com\",\n  \"password\": \"nailbook123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "My bookings (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const { upcoming, past } = pm.response.json();",
+                  "pm.test('returns upcoming and past lists', () => { pm.expect(upcoming).to.be.an('array'); pm.expect(past).to.be.an('array'); });",
+                  "const seeded = upcoming.find((b) => b.status === 'BOOKED' && b.manicurist.id === Number(pm.collectionVariables.get('manicuristId')));",
+                  "pm.test('has an upcoming booking with the demo manicurist', () => pm.expect(seeded).to.be.an('object'));",
+                  "pm.test('the nested users have no email', () => { pm.expect(seeded.client).to.not.have.property('email'); pm.expect(seeded.manicurist).to.not.have.property('email'); });",
+                  "if (seeded) {",
+                  "  pm.collectionVariables.set('serviceId', seeded.serviceId);",
+                  "  pm.collectionVariables.set('seedStartAt', seeded.startAt);",
+                  "  // The seed books it at 11:00 Sofia time, so its UTC date is also the Sofia date.",
+                  "  pm.collectionVariables.set('bookingDate', seeded.startAt.slice(0, 10));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/bookings/mine"
+          }
+        },
+        {
+          "name": "My bookings without a token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "pm.test('error code is UNAUTHORIZED', () => pm.expect(pm.response.json().error.code).to.eql('UNAUTHORIZED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/bookings/mine"
+          }
+        },
+        {
+          "name": "Free slots on that day (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const { dayOff, slots } = pm.response.json();",
+                  "pm.test('is a working day with free slots', () => { pm.expect(dayOff).to.eql(false); pm.expect(slots.length).to.be.above(0); });",
+                  "pm.test('the booked start is not offered', () => pm.expect(slots).to.not.include(pm.collectionVariables.get('seedStartAt')));",
+                  "if (slots && slots.length > 0) {",
+                  "  pm.collectionVariables.set('slotStartAt', slots[0]);",
+                  "  pm.collectionVariables.set('offGridStartAt', new Date(Date.parse(slots[0]) + 15 * 60000).toISOString());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/manicurists/{{manicuristId}}/slots?serviceId={{serviceId}}&date={{bookingDate}}"
+          }
+        },
+        {
+          "name": "Free slots for an unknown service (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('error code is NOT_FOUND', () => pm.expect(pm.response.json().error.code).to.eql('NOT_FOUND'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/manicurists/{{manicuristId}}/slots?serviceId=999999&date={{bookingDate}}"
+          }
+        },
+        {
+          "name": "Book the first free slot (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const { booking } = pm.response.json();",
+                  "pm.test('is booked at the chosen start', () => { pm.expect(booking.status).to.eql('BOOKED'); pm.expect(booking.startAt).to.eql(pm.collectionVariables.get('slotStartAt')); });",
+                  "if (booking) pm.collectionVariables.set('newBookingId', booking.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"manicuristId\": {{manicuristId}},\n  \"serviceId\": {{serviceId}},\n  \"startAt\": \"{{slotStartAt}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/bookings"
+          }
+        },
+        {
+          "name": "Book the same slot again (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('error code is SLOT_TAKEN', () => pm.expect(pm.response.json().error.code).to.eql('SLOT_TAKEN'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"manicuristId\": {{manicuristId}},\n  \"serviceId\": {{serviceId}},\n  \"startAt\": \"{{slotStartAt}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/bookings"
+          }
+        },
+        {
+          "name": "Book off the 30-minute grid (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('error code is SLOT_INVALID', () => pm.expect(pm.response.json().error.code).to.eql('SLOT_INVALID'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"manicuristId\": {{manicuristId}},\n  \"serviceId\": {{serviceId}},\n  \"startAt\": \"{{offGridStartAt}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/bookings"
+          }
+        },
+        {
+          "name": "Book as a manicurist (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "pm.test('error code is FORBIDDEN', () => pm.expect(pm.response.json().error.code).to.eql('FORBIDDEN'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{manicuristToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"manicuristId\": {{manicuristId}},\n  \"serviceId\": {{serviceId}},\n  \"startAt\": \"{{slotStartAt}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/bookings"
+          }
+        },
+        {
+          "name": "Manicurist schedule for that day (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('includes the new booking', () => pm.expect(pm.response.json().bookings.map((b) => b.id)).to.include(Number(pm.collectionVariables.get('newBookingId'))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{manicuristToken}}" }],
+            "url": "{{baseUrl}}/api/bookings/schedule?date={{bookingDate}}"
+          }
+        },
+        {
+          "name": "Schedule with a client token (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "pm.test('error code is FORBIDDEN', () => pm.expect(pm.response.json().error.code).to.eql('FORBIDDEN'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{clientToken}}" }],
+            "url": "{{baseUrl}}/api/bookings/schedule?date={{bookingDate}}"
+          }
+        },
+        {
+          "name": "Cancel without a reason (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('error code is VALIDATION_ERROR', () => pm.expect(pm.response.json().error.code).to.eql('VALIDATION_ERROR'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": "{{baseUrl}}/api/bookings/{{newBookingId}}/cancel"
+          }
+        },
+        {
+          "name": "Cancel as the client (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const { booking } = pm.response.json();",
+                  "pm.test('is cancelled by the client with the reason', () => { pm.expect(booking.status).to.eql('CANCELLED'); pm.expect(booking.cancelledBy).to.eql('CLIENT'); pm.expect(booking.cancelReason).to.eql('Няма да успея да дойда.'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Няма да успея да дойда.\"\n}" },
+            "url": "{{baseUrl}}/api/bookings/{{newBookingId}}/cancel"
+          }
+        },
+        {
+          "name": "Cancel the same booking again (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('error code is NOT_CANCELLABLE', () => pm.expect(pm.response.json().error.code).to.eql('NOT_CANCELLABLE'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Няма да успея да дойда.\"\n}" },
+            "url": "{{baseUrl}}/api/bookings/{{newBookingId}}/cancel"
           }
         }
       ]

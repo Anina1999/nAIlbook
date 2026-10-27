@@ -128,6 +128,7 @@ describe('GET /api/manicurists/:id', () => {
       manicurist: {
         id: manicurist.id,
         name: 'Ана Петрова',
+        email: manicurist.email,
         phone: '0888123456',
         city: 'София',
         address: 'ул. Розова 5',
@@ -146,7 +147,6 @@ describe('GET /api/manicurists/:id', () => {
         workingHours: [1, 2, 3, 4, 5].map((weekday) => ({ weekday, startMin: 540, endMin: 1080 })),
       },
     });
-    expect(res.body.manicurist).not.toHaveProperty('email');
   });
 
   it('leaves out a removed service', async () => {
@@ -198,6 +198,7 @@ describe('PUT /api/me/profile', () => {
     expect(res.body.manicurist).toMatchObject({
       id: manicurist.id,
       name: 'Ана Иванова',
+      email: manicurist.email,
       phone: '0899000111',
       city: 'Пловдив',
       address: 'ул. Нова 2',
@@ -206,7 +207,6 @@ describe('PUT /api/me/profile', () => {
     });
     expect(res.body.manicurist.services).toHaveLength(1);
     expect(res.body.manicurist.workingHours).toHaveLength(5);
-    expect(res.body.manicurist).not.toHaveProperty('email');
 
     const user = await prisma.user.findUniqueOrThrow({ where: { id: manicurist.id }, include: { profile: true } });
     expect(user).toMatchObject({ name: 'Ана Иванова', phone: '0899000111' });

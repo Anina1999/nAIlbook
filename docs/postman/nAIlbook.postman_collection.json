@@ -387,7 +387,7 @@
                   "const { manicurist } = pm.response.json();",
                   "pm.test('is the demo manicurist', () => pm.expect(manicurist.name).to.eql('Мария Петрова'));",
                   "pm.test('has services and working hours', () => { pm.expect(manicurist.services).to.not.be.empty; pm.expect(manicurist.workingHours).to.not.be.empty; });",
-                  "pm.test('has no email', () => pm.expect(manicurist).to.not.have.property('email'));"
+                  "pm.test('shows the email', () => pm.expect(manicurist.email).to.eql('maria@example.com'));"
                 ]
               }
             }
@@ -429,7 +429,7 @@
                   "pm.test('200 OK', () => pm.response.to.have.status(200));",
                   "const { manicurist } = pm.response.json();",
                   "pm.test('returns the saved profile', () => pm.expect(manicurist).to.include({ name: 'Мария Петрова', phone: '0888 000 001', city: 'София' }));",
-                  "pm.test('has no email', () => pm.expect(manicurist).to.not.have.property('email'));"
+                  "pm.test('shows the email', () => pm.expect(manicurist.email).to.eql('maria@example.com'));"
                 ]
               }
             }

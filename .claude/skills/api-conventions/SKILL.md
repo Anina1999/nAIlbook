@@ -31,10 +31,10 @@ The modules are `auth`, `catalog` and `bookings`. Booking and slot rules live in
 | `FORBIDDEN` | 403 | The role is wrong, or the user does not own the row. |
 | `NOT_FOUND` | 404 | The resource does not exist. |
 | `EMAIL_TAKEN` | 409 | The email is already registered. |
-| `SLOT_INVALID` | 400 | The slot is off the grid, outside working hours or in the past. |
+| `SLOT_INVALID` | 400 | The slot is off the grid, outside working hours, in the past or too far ahead (after the 12-month limit). A day off on a past date or after the limit gets it too. |
 | `SLOT_TAKEN` | 409 | The slot overlaps an active booking. |
 | `DAY_OFF` | 409 | Someone tried to book a day off. |
-| `DAY_HAS_BOOKINGS` | 409 | A manicurist tried to mark a day off that has active bookings. `details.bookings` lists them. |
+| `DAY_HAS_BOOKINGS` | 409 | A manicurist tried to mark a day off that has active bookings. `details.bookings` lists them as `booking` objects (the shape below), by start time. |
 | `ALREADY_DAY_OFF` | 409 | The date is already a day off. |
 | `NOT_CANCELLABLE` | 409 | The booking is in the past or already cancelled. |
 | `INTERNAL_ERROR` | 500 | An unexpected error. The details stay in the server log. |
@@ -89,13 +89,17 @@ This list is the contract the client codes against. Write the shape of a new end
 | `POST /api/auth/logout` | `204`, no body |
 | `GET /api/manicurists?city=&service=` | `200 { manicurists: [{ id, name, city, imageUrl, services: [{ id, name, durationMin, priceCents }] }] }`. Both parameters are optional; an empty or blank one is no filter. `city` matches part of the city and `service` part of an active service name, ignoring case, filtered in JS with `toLocaleLowerCase('bg')` and `includes` (SQLite ignores case only for ASCII). Manicurists and their services are sorted by name (`localeCompare` with `'bg'`). A repeated parameter is `400 VALIDATION_ERROR`. |
 | `GET /api/manicurists/:id` | `200 { manicurist }`. `404 NOT_FOUND` for an unknown id or a user who is not a manicurist. |
-| `GET /api/manicurists/:id/slots?serviceId=&date=` | `200 { date, dayOff, slots }`. `slots` are UTC ISO start times. `404 NOT_FOUND` when the service is removed or does not belong to that manicurist. |
+| `GET /api/manicurists/:id/slots?serviceId=&date=` | `200 { date, dayOff, slots }`. `slots` are UTC ISO start times. `404 NOT_FOUND` when the service is removed or does not belong to that manicurist. A date after the 12-month limit is `200 { date, dayOff: false, slots: [] }`. |
 | `PUT /api/me/profile`, body `{ name, phone, city, address, bio }` | `200 { manicurist }`. The fields follow the registration rules (`contactFields` and `profileFields` in `modules/auth/schemas.ts`): name, phone, city and address trimmed and required, `bio` trimmed and optional (default `""`). Name and phone are saved in `User`, the rest in `ManicuristProfile`, in one transaction. |
 | `POST /api/me/services`, body `{ name, description, durationMin, priceCents }` | `201 { service }` |
 | `PUT /api/me/services/:id`, the same body (every field again) | `200 { service }`. `403 FORBIDDEN` for another manicurist's service, `404 NOT_FOUND` for a removed or unknown one. Bookings keep their own `serviceName` and `priceCents`. |
 | `DELETE /api/me/services/:id` | `204`, no body. A soft delete (sets `deletedAt`), with the same `403` and `404` as `PUT`. |
 | `PUT /api/me/working-hours`, body `{ workingHours: [{ weekday, startMin, endMin }] }` | `200 { workingHours }`, by weekday. Replaces the whole week in one transaction; an empty list means no working day. Existing bookings are not checked and stay, even outside the new hours. |
-| `POST /api/bookings`, body `{ manicuristId, serviceId, startAt }` | `201 { booking }` |
+| `GET /api/manicurists/:id/days-off?from=&to=` | `200 { daysOff: ["YYYY-MM-DD", ...] }`: the active days off from `from` to `to` inclusive, ascending. `from` and `to` are required valid dates with `to >= from` and at most 366 days apart, else `400 VALIDATION_ERROR`. `404 NOT_FOUND` for an unknown id or a user who is not a manicurist. |
+| `GET /api/me/days-off` | `200 { daysOff: [{ id, date }] }`: the own active days off from today (Sofia) on, ascending. |
+| `POST /api/me/days-off`, body `{ date }` | `201 { dayOff: { id, date } }`. The checks of `canMarkDayOff`, in order: `400 SLOT_INVALID` for a past date or a date after the 12-month limit, `409 ALREADY_DAY_OFF`, `409 DAY_HAS_BOOKINGS` with `details: { bookings: booking[] }` (active `BOOKED` bookings on that Sofia date, by start time). A removed day off for the date is reused: its `deletedAt` is cleared and the same `id` comes back. The check and the write run in one transaction. |
+| `DELETE /api/me/days-off/:id` | `204`, no body. A soft delete (sets `deletedAt`). `404 NOT_FOUND` for an unknown or already removed one, `403 FORBIDDEN` for another manicurist's. |
+| `POST /api/bookings`, body `{ manicuristId, serviceId, startAt }` | `201 { booking }`. `400 SLOT_INVALID` when the start is after the 12-month limit. |
 | `GET /api/bookings/mine` | `200 { upcoming, past }`, both `booking[]`. A booking is upcoming until it ends (`endAt >= now`), soonest first; past ones latest first. Cancelled bookings are included. |
 | `GET /api/bookings/schedule?date=` | `200 { date, bookings }`: the manicurist's bookings on that Sofia date by start time, cancelled ones included |
 | `PATCH /api/bookings/:id/cancel`, body `{ reason }` | `200 { booking }`. `reason` is required, trimmed, 1–200 characters. |

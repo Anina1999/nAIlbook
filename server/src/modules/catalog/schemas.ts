@@ -74,3 +74,21 @@ export type SearchFilters = z.output<typeof searchQuery>;
 export type ProfileInput = z.output<typeof profileBody>;
 export type ServiceInput = z.output<typeof serviceBody>;
 export type WorkingDay = z.output<typeof workingDay>;
+
+// A Sofia-local calendar date. z.iso.date() also rejects dates that do not exist.
+const date = z.iso.date({ error: 'Изберете валидна дата.' });
+
+const MAX_RANGE_DAYS = 366;
+const DAY_MS = 86_400_000;
+
+// The public calendar asks for a range. A repeated parameter arrives as an
+// array and is rejected.
+export const daysOffQuery = z
+  .object({ from: date, to: date })
+  .refine(({ from, to }) => to >= from, { error: 'Крайната дата трябва да е след началната.', path: ['to'] })
+  .refine(({ from, to }) => (Date.parse(to) - Date.parse(from)) / DAY_MS <= MAX_RANGE_DAYS, {
+    error: 'Периодът трябва да е най-много 366 дни.',
+    path: ['to'],
+  });
+
+export const dayOffBody = z.object({ date });

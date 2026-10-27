@@ -29,16 +29,21 @@ The inputs are plain types in `scheduling/types.ts`, never Prisma types, so Pris
 
 The slot grid is 30 minutes, aligned to the Sofia clock (:00 and :30). Working hours are saved only on 30-minute boundaries, and the API rejects any other value. Daylight-saving days are handled by building local times and converting them through `lib/time.ts`. Never add fixed offsets. On the spring switch day a local time between 03:00 and 04:00 does not exist, and `sofiaToUtc` moves it forward by the gap. On the autumn switch day such a time happens twice, and `sofiaToUtc` takes the first occurrence.
 
+## The 12-month limit
+
+A booking or a day off is allowed up to `lastBookableDate(now)` in `scheduling/intervals.ts`: today in Sofia plus `MAX_MONTHS_AHEAD` (12) calendar months, inclusive. It is the same day of the month; a shorter target month uses its last day, so 29 February becomes 28 February (`addMonths` in `lib/time.ts`). The check compares Sofia dates, never the UTC date of `now`. The public days-off list does not change: dates after the limit just never exist. `sofiaDayRange(date)` in `lib/time.ts` gives the `[from, to)` UTC range of a Sofia date, for the queries that load a day's bookings.
+
 ## `calculateAvailableSlots(service, date, workingHours, daysOff, bookings, now)`
 
 The function returns the free start times as UTC ISO strings, in ascending order. It applies these steps in order:
 
-1. If `date` is in `daysOff`, return `[]`.
-2. If the weekday of `date` has no working hours, return `[]`.
-3. Generate start times every 30 minutes from `startMin`.
-4. Keep a start time only if `start + service.durationMin <= endMin`.
-5. Drop a start time if `[start, start + duration)` overlaps any booking with status `BOOKED`. Two intervals overlap when `a.start < b.end && b.start < a.end`, so back-to-back bookings do not overlap.
-6. Drop start times that are not after `now`.
+1. If `date` is after `lastBookableDate(now)`, return `[]` (see "The 12-month limit").
+2. If `date` is in `daysOff`, return `[]`.
+3. If the weekday of `date` has no working hours, return `[]`.
+4. Generate start times every 30 minutes from `startMin`.
+5. Keep a start time only if `start + service.durationMin <= endMin`.
+6. Drop a start time if `[start, start + duration)` overlaps any booking with status `BOOKED`. Two intervals overlap when `a.start < b.end && b.start < a.end`, so back-to-back bookings do not overlap.
+7. Drop start times that are not after `now`.
 
 The slots endpoint responds with `{ date, dayOff: boolean, slots: string[] }`.
 
@@ -52,6 +57,7 @@ The server re-checks everything and never trusts the client. `service` is `null`
 | The date is not a day off | `DAY_OFF` | 409 |
 | The start is on the grid and the whole duration fits inside working hours | `SLOT_INVALID` | 400 |
 | The start is after `now` | `SLOT_INVALID` | 400 |
+| The Sofia date of the start is not after `lastBookableDate(now)` | `SLOT_INVALID` | 400 |
 | No overlap with an active booking | `SLOT_TAKEN` | 409 |
 
 The date and time of the start are its Sofia date and minutes (`utcToSofia`). A start is on the grid only when its minutes are a multiple of 30 and `sofiaToUtc` gives back the same instant. This rejects seconds and the second occurrence of a repeated local hour, which `calculateAvailableSlots` never offers either.
@@ -62,7 +68,7 @@ The date and time of the start are its Sofia date and minutes (`utcToSofia`). A 
 
 `canMarkDayOff(date, daysOff, bookings, now)` checks the allowed date, one per date and existing bookings, in this order. The caller passes only the active days off. It is generic over the booking type and returns the bookings on that date in `details.bookings` as they were passed, so the route keeps their id, service and client.
 
-- **Allowed dates:** only today or a future date, in Sofia time. Anything else is `SLOT_INVALID`, with a message about the date.
+- **Allowed dates:** only today or a future date, in Sofia time, up to `lastBookableDate(now)`. A past date is checked first, then a date after the limit, both before `ALREADY_DAY_OFF`. Anything else is `SLOT_INVALID`, with a message about the date.
 - **Active days off only:** a day off counts only while `deletedAt` is null. Load days off with `deletedAt: null` everywhere they are used.
 - **One per date:** a second active day off for the same date returns `409 ALREADY_DAY_OFF`. If the date has a removed row, marking it again clears `deletedAt` on that row.
 - **Existing bookings:** if `BOOKED` bookings exist on that Sofia date, return `409 DAY_HAS_BOOKINGS` with `details.bookings`. Do not cancel them automatically.

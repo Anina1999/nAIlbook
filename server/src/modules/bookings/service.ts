@@ -4,50 +4,21 @@
 import type { Prisma } from '../../generated/prisma/client.js';
 import { AppError } from '../../lib/errors.js';
 import { prisma } from '../../lib/prisma.js';
-import { addDays, sofiaToUtc, utcToSofia } from '../../lib/time.js';
+import { sofiaDayRange, utcToSofia } from '../../lib/time.js';
 import { canCancel, validateBooking } from '../../scheduling/booking.js';
 import { calculateAvailableSlots } from '../../scheduling/slots.js';
+import { bookingSelect, toBooking } from './booking-shape.js';
 import type { CreateBookingInput } from './schemas.js';
-
-// The fields of a booking the API returns. No email: it is never public.
-const bookingSelect = {
-  id: true,
-  startAt: true,
-  endAt: true,
-  status: true,
-  cancelledBy: true,
-  cancelReason: true,
-  serviceId: true,
-  serviceName: true,
-  priceCents: true,
-  client: { select: { id: true, name: true, phone: true } },
-  manicurist: { select: { city: true, address: true, user: { select: { id: true, name: true, phone: true } } } },
-} satisfies Prisma.BookingSelect;
-
-type BookingRow = Prisma.BookingGetPayload<{ select: typeof bookingSelect }>;
-
-// The booking object of the API contract (api-conventions, Response shapes).
-function toBooking({ manicurist, ...booking }: BookingRow) {
-  const { user, ...profile } = manicurist;
-  return { ...booking, manicurist: { ...user, ...profile } };
-}
-
-export type PublicBooking = ReturnType<typeof toBooking>;
-
-// A Sofia date as a UTC range [from, to). Working hours end by midnight, so no
-// booking from the day before reaches into it.
-function dayWindow(date: string) {
-  return { gte: sofiaToUtc(date, 0), lt: sofiaToUtc(addDays(date, 1), 0) };
-}
 
 // What the scheduling checks need for one manicurist and one Sofia date: the
 // weekly hours, the date if it is an active day off, and its active bookings.
 async function loadDay(db: Prisma.TransactionClient, manicuristId: number, date: string) {
+  const { from, to } = sofiaDayRange(date);
   const [workingHours, dayOff, bookings] = await Promise.all([
     db.workingHours.findMany({ where: { manicuristId }, select: { weekday: true, startMin: true, endMin: true } }),
     db.dayOff.findFirst({ where: { manicuristId, date, deletedAt: null }, select: { date: true } }),
     db.booking.findMany({
-      where: { manicuristId, status: 'BOOKED', startAt: dayWindow(date) },
+      where: { manicuristId, status: 'BOOKED', startAt: { gte: from, lt: to } },
       select: { startAt: true, endAt: true, status: true },
     }),
   ]);
@@ -119,8 +90,9 @@ export async function listMine(clientId: number, now: Date) {
 
 // Every booking of the manicurist on a Sofia date, cancelled ones included.
 export async function getSchedule(manicuristId: number, date: string) {
+  const { from, to } = sofiaDayRange(date);
   const rows = await prisma.booking.findMany({
-    where: { manicuristId, startAt: dayWindow(date) },
+    where: { manicuristId, startAt: { gte: from, lt: to } },
     orderBy: { startAt: 'asc' },
     select: bookingSelect,
   });

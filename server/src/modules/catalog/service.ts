@@ -22,13 +22,14 @@ const serviceSelect = {
 
 const hoursSelect = { weekday: true, startMin: true, endMin: true } satisfies Prisma.WorkingHoursSelect;
 
-// The public page. No email: it is never public.
+// The public page and the own profile. The email is shown here as a contact;
+// search results and bookings never carry one.
 const manicuristSelect = {
   city: true,
   address: true,
   bio: true,
   imageUrl: true,
-  user: { select: { id: true, name: true, phone: true } },
+  user: { select: { id: true, name: true, email: true, phone: true } },
   services: { where: activeServices, select: serviceSelect },
   workingHours: { orderBy: { weekday: 'asc' }, select: hoursSelect },
 } satisfies Prisma.ManicuristProfileSelect;

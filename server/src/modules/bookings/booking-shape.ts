@@ -2,7 +2,7 @@
 // the days-off conflict answer in the catalog module.
 import type { Prisma } from '../../generated/prisma/client.js';
 
-// The fields of a booking the API returns. No email: it is never public.
+// The fields of a booking the API returns. No email: bookings never carry one.
 export const bookingSelect = {
   id: true,
   startAt: true,

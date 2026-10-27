@@ -1,8 +1,12 @@
 // Search, the public manicurist page and the manicurist's own profile,
-// services and working hours. Removed services (deletedAt set) are never read.
+// services, working hours and days off. Removed services and days off
+// (deletedAt set) are never read.
 import type { Prisma } from '../../generated/prisma/client.js';
 import { AppError } from '../../lib/errors.js';
 import { prisma } from '../../lib/prisma.js';
+import { sofiaDayRange, todayInSofia } from '../../lib/time.js';
+import { canMarkDayOff } from '../../scheduling/day-off.js';
+import { bookingSelect, toBooking } from '../bookings/booking-shape.js';
 import type { ProfileInput, SearchFilters, ServiceInput, WorkingDay } from './schemas.js';
 
 const activeServices = { deletedAt: null } satisfies Prisma.ServiceWhereInput;
@@ -116,5 +120,67 @@ export async function replaceWorkingHours(manicuristId: number, days: WorkingDay
     await tx.workingHours.deleteMany({ where: { manicuristId } });
     await tx.workingHours.createMany({ data: days.map((day) => ({ ...day, manicuristId })) });
     return tx.workingHours.findMany({ where: { manicuristId }, orderBy: { weekday: 'asc' }, select: hoursSelect });
+  });
+}
+
+// Days off. Only active rows (deletedAt: null) are ever read, and a date is a
+// Sofia "YYYY-MM-DD" string, so SQLite compares and sorts it in date order.
+const activeDaysOff = { deletedAt: null } satisfies Prisma.DayOffWhereInput;
+const dayOffSelect = { id: true, date: true } satisfies Prisma.DayOffSelect;
+
+// Active days off in [from, to] as ascending dates. A user who is not a
+// manicurist is as missing as an unknown id.
+export async function listDaysOff(manicuristId: number, from: string, to: string) {
+  const profile = await prisma.manicuristProfile.findUnique({ where: { userId: manicuristId }, select: { userId: true } });
+  if (!profile) throw new AppError('NOT_FOUND', 'Маникюристът не е намерен.');
+
+  const rows = await prisma.dayOff.findMany({
+    where: { manicuristId, ...activeDaysOff, date: { gte: from, lte: to } },
+    orderBy: { date: 'asc' },
+    select: { date: true },
+  });
+  return rows.map((row) => row.date);
+}
+
+// The manicurist's own active days off from today (Sofia) on, ascending.
+export async function listOwnDaysOff(manicuristId: number, now: Date) {
+  return prisma.dayOff.findMany({
+    where: { manicuristId, ...activeDaysOff, date: { gte: todayInSofia(now) } },
+    orderBy: { date: 'asc' },
+    select: dayOffSelect,
+  });
+}
+
+// The check and the write run in one transaction, so a booking cannot slip in
+// between them (see createBooking). A removed row for the date is reused.
+export async function markDayOff(manicuristId: number, date: string, now: Date) {
+  return prisma.$transaction(async (tx) => {
+    const { from, to } = sofiaDayRange(date);
+    const [existing, bookings] = await Promise.all([
+      tx.dayOff.findUnique({ where: { manicuristId_date: { manicuristId, date } }, select: { id: true, deletedAt: true } }),
+      tx.booking.findMany({
+        where: { manicuristId, status: 'BOOKED', startAt: { gte: from, lt: to } },
+        orderBy: { startAt: 'asc' },
+        select: bookingSelect,
+      }),
+    ]);
+
+    const result = canMarkDayOff(date, existing && !existing.deletedAt ? [date] : [], bookings.map(toBooking), now);
+    if (!result.ok) throw new AppError(result.code, result.message, result.details);
+
+    if (existing) {
+      return tx.dayOff.update({ where: { id: existing.id }, data: { deletedAt: null }, select: dayOffSelect });
+    }
+    return tx.dayOff.create({ data: { manicuristId, date }, select: dayOffSelect });
+  });
+}
+
+// Soft delete: a removed or unknown row is 404, someone else's is 403.
+export async function removeDayOff(id: number, manicuristId: number) {
+  await prisma.$transaction(async (tx) => {
+    const dayOff = await tx.dayOff.findUnique({ where: { id, ...activeDaysOff }, select: { manicuristId: true } });
+    if (!dayOff) throw new AppError('NOT_FOUND', 'Почивният ден не е намерен.');
+    if (dayOff.manicuristId !== manicuristId) throw new AppError('FORBIDDEN', 'Нямате достъп до този почивен ден.');
+    await tx.dayOff.update({ where: { id }, data: { deletedAt: new Date() } });
   });
 }

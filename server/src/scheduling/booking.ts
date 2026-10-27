@@ -3,7 +3,7 @@
 
 import type { ErrorCode } from '../lib/errors.js';
 import { sofiaToUtc, utcToSofia, weekdayOf } from '../lib/time.js';
-import { GRID_MIN, overlapsBooking } from './intervals.js';
+import { GRID_MIN, lastBookableDate, overlapsBooking } from './intervals.js';
 import type {
   CancellableBooking,
   CancelledBy,
@@ -41,6 +41,10 @@ export function validateBooking(input: ValidateBookingInput): CheckResult<{ endA
 
   if (startAt <= now) {
     return fail('SLOT_INVALID', 'Този час вече е минал. Изберете друг час.');
+  }
+
+  if (date > lastBookableDate(now)) {
+    return fail('SLOT_INVALID', 'Можете да запазите час най-много 12 месеца напред. Изберете по-ранна дата.');
   }
 
   const endAt = new Date(startAt.getTime() + service.durationMin * 60_000);

@@ -2,9 +2,10 @@
 // Pure: the caller loads the active days off (deletedAt: null) and passes now.
 
 import { todayInSofia, utcToSofia } from '../lib/time.js';
+import { lastBookableDate } from './intervals.js';
 import type { BookingInput, CheckResult } from './types.js';
 
-// Checks in the skill's order: the date, an active day off, then bookings.
+// Checks in the skill's order: the date (past, then too far ahead), an active day off, then bookings.
 // The bookings on that Sofia date come back as they were passed, so the
 // route keeps their id, service and client for the "Days off" screen.
 export function canMarkDayOff<T extends BookingInput>(
@@ -16,6 +17,10 @@ export function canMarkDayOff<T extends BookingInput>(
   // YYYY-MM-DD strings compare in date order.
   if (date < todayInSofia(now)) {
     return { ok: false, code: 'SLOT_INVALID', message: 'Изберете днешна или бъдеща дата.' };
+  }
+
+  if (date > lastBookableDate(now)) {
+    return { ok: false, code: 'SLOT_INVALID', message: 'Датата е прекалено напред. Изберете дата до 12 месеца оттук.' };
   }
 
   if (daysOff.includes(date)) {

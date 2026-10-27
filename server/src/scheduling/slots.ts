@@ -2,7 +2,7 @@
 // (calculateAvailableSlots). Pure: the caller loads the data and passes now.
 
 import { sofiaToUtc, weekdayOf } from '../lib/time.js';
-import { GRID_MIN, overlapsBooking } from './intervals.js';
+import { GRID_MIN, lastBookableDate, overlapsBooking } from './intervals.js';
 import type { BookingInput, ServiceInput, WorkingHoursInput } from './types.js';
 
 // The free start times on a Sofia date, as UTC ISO strings in ascending order.
@@ -14,6 +14,9 @@ export function calculateAvailableSlots(
   bookings: BookingInput[],
   now: Date,
 ): string[] {
+  // YYYY-MM-DD strings compare in date order.
+  if (date > lastBookableDate(now)) return [];
+
   if (daysOff.includes(date)) return [];
 
   const hours = workingHours.find((w) => w.weekday === weekdayOf(date));

@@ -43,6 +43,20 @@ export function addDays(date: string, days: number): string {
   return toDateString(parseDate(date) + days * DAY_MS);
 }
 
+// The same day of the month `months` later, or the last day of that month
+// when it is shorter (29 February becomes 28 February).
+export function addMonths(date: string, months: number): string {
+  const [year, month, day] = date.split('-').map(Number);
+  const lastDayOfTarget = new Date(Date.UTC(year, month - 1 + months + 1, 0)).getUTCDate();
+  return toDateString(Date.UTC(year, month - 1 + months, Math.min(day, lastDayOfTarget)));
+}
+
+// A Sofia date as a UTC range [from, to). Working hours end by midnight, so no
+// booking from the day before reaches into it.
+export function sofiaDayRange(date: string): { from: Date; to: Date } {
+  return { from: sofiaToUtc(date, 0), to: sofiaToUtc(addDays(date, 1), 0) };
+}
+
 // 0 = Sunday, as in WorkingHours.weekday.
 export function weekdayOf(date: string): number {
   return new Date(parseDate(date)).getUTCDay();

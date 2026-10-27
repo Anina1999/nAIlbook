@@ -72,8 +72,8 @@ The detailed rules live in project skills under [.claude/skills/](../.claude/ski
 
 ### 5. Testing layer
 
-- **Owns:** `server/tests/`, the Postman collection in `docs/postman/` and optional Playwright tests in `client/e2e/`.
-- **Rule:** tests are written with each module, not at the end.
+- **Owns:** `server/tests/`, the Playwright E2E tests in `client/e2e/` and the Postman collection in `docs/postman/`.
+- **Rule:** tests are written with each module, not at the end. From module 4 on, each screen comes with E2E tests for its main flow, run against their own seeded `e2e.db`.
 
 ---
 
@@ -86,4 +86,4 @@ Each step depends on the ones before it: bookings need the schema and `requireAu
 3. Module 3, Scheduling engine and bookings. This is the critical path.
 4. Module 2, Catalog CRUD and days off, plus the Postman collection.
 5. Module 4, UI.
-6. Wrap-up: end-to-end manual test, README, optional Playwright.
+6. Wrap-up: end-to-end manual test, README, the test gap review.

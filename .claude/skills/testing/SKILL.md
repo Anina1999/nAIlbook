@@ -1,6 +1,6 @@
 ---
 name: testing
-description: Test setup for nAIlbook, covering the server/tests/ layout, the Vitest config, the SQLite test database, shared helpers and factories, dates in tests and the Postman collection. Use when creating or changing any test file, test helper or Vitest config, when a test fails for setup reasons, or when editing docs/postman/.
+description: Test setup for nAIlbook, covering the server/tests/ layout, the Vitest config, the SQLite test database, shared helpers and factories, dates in tests, the Playwright E2E tests in client/e2e/ and the Postman collection. Use when creating or changing any test file, test helper, Vitest or Playwright config, when a test fails for setup reasons, or when editing docs/postman/.
 ---
 
 # Testing
@@ -13,7 +13,8 @@ This skill covers how tests are set up and run. What each module must test is li
 - Never weaken an assertion, delete a test or add `.skip` to make the suite green. Fix the code, or stop and ask if the test is wrong.
 - Never commit `.only` or `.skip`.
 - Assert on the HTTP status and `error.code`. Do not assert on Bulgarian message text, because wording changes.
-- Tests never depend on the seed. Each test creates the data it needs with the factories.
+- Server tests never depend on the seed. Each test creates the data it needs with the factories. E2E tests are the exception: they start from the seed (see E2E).
+- Run `npm test` and `npm run e2e` from one process at a time. Each shares one database file (`test.db`, `e2e.db`), and E2E also its ports, so two runs at once give false failures.
 
 ## Layout
 
@@ -67,7 +68,19 @@ Name files `<area>.test.ts`. Use one `describe` per endpoint (`describe('POST /a
 npm test                             # all tests, from the root or server/
 npx vitest run tests/unit            # in server/, unit tests only
 npx vitest run tests/api/bookings    # in server/, one file
+npm run e2e                          # Playwright, from the root or client/
+npx playwright test e2e/smoke        # in client/, one file
 ```
+
+## E2E (Playwright)
+
+- The tests live in `client/e2e/`, named `<screen or flow>.spec.ts`, with `client/playwright.config.ts` next to `src/`. They are typechecked by `client/e2e/tsconfig.json` as part of `npm run typecheck -w client`.
+- **Their own servers and database.** Playwright starts the server on port 3100 and the client on 5180 (`client/e2e/ports.ts`), with `reuseExistingServer: false`, so a running dev server (3000, 5173, `dev.db`) is never used. The server gets every setting from `webServer.env` (`DATABASE_URL="file:./e2e.db"`, a test-only `JWT_SECRET`, `PORT`, `CLIENT_ORIGIN`), with no `.env` and no watch. Its command `npm run e2e:server` (in `server/`) runs `scripts/e2e-db.ts` first: it deletes `e2e.db`, runs `prisma migrate deploy` and `prisma db seed`, and refuses any `DATABASE_URL` other than `e2e.db`, because the seed deletes every row. `e2e.db` is ignored by the `*.db` rule.
+- **Two projects:** `chromium` (desktop) and `mobile` (Chromium at 375×812). Every test runs in both. `workers: 1`, because the tests share one database.
+- **The seed is the starting state.** Use the demo accounts from the README to log in. A test that creates rows uses a unique email (for example with `Date.now()`), so a second run in a row passes too. Never depend on rows another test created.
+- **Selectors** are the ones a user sees: `getByRole`, `getByLabel` and `getByText` with the Bulgarian names. No `data-testid`, so a test also checks that the controls have proper labels.
+- Each screen of module 4 comes with 1–3 E2E tests for its main flow and its 375px layout. Rules already covered by unit or API tests (slot calculation, booking validation, error codes) are not repeated in E2E.
+- In CI the separate `E2E` job runs after `CI`, installs Chromium with `npx playwright install --with-deps chromium` and uploads `client/playwright-report/` when it fails.
 
 ## Postman collection
 
@@ -80,4 +93,4 @@ npx vitest run tests/api/bookings    # in server/, one file
 
 ## Out of scope
 
-The MVP has no client unit tests and no Playwright. The UI is checked by hand on desktop and at phone width.
+The MVP has no client unit tests: the client is covered by the E2E tests and a look by hand on desktop and at phone width. WebKit, Firefox, visual regression and Playwright MCP are not set up yet.

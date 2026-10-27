@@ -32,8 +32,8 @@ If the code has to differ from a skill, stop and ask. When the change is agreed,
 | Server (`server/`) | Node.js, Express, TypeScript, Prisma, SQLite |
 | Auth | JWT and bcrypt |
 | Validation | zod |
-| Tests | Vitest, Supertest |
-| Approved extras | `cors` (server), `tsx` (server dev runner), `concurrently` (root, runs client and server together), `@prisma/adapter-better-sqlite3` + `better-sqlite3` (server, the SQLite driver Prisma 7 requires), the Sofia Sans font from Google Fonts (client, a `<link>` in `index.html`, see `ui-design`) |
+| Tests | Vitest, Supertest, Playwright (E2E, Chromium only) |
+| Approved extras | `cors` (server), `tsx` (server dev runner), `concurrently` (root, runs client and server together), `@prisma/adapter-better-sqlite3` + `better-sqlite3` (server, the SQLite driver Prisma 7 requires), the Sofia Sans font from Google Fonts (client, a `<link>` in `index.html`, see `ui-design`), `@playwright/test` (client, the E2E tests in `client/e2e/`) |
 
 Ask before adding a dependency that is not on this list. Type packages (`@types/*`) and build plugins for the listed tools (`@vitejs/plugin-react`, `@tailwindcss/vite`) count as part of the stack.
 
@@ -47,7 +47,9 @@ npm run dev              # starts the server (:3000) and the client (:5173) toge
 npm test                 # runs all tests (server Vitest)
 npx vitest run tests/api/auth        # in server/; one test file
 npx vitest run -t "duplicate email"  # in server/; tests whose name matches
-npm run typecheck -w server   # or -w client; tsc --noEmit
+npm run e2e              # Playwright E2E; starts its own server (:3100) and client (:5180) on e2e.db
+npx playwright install chromium      # in client/; once after install, downloads the browser
+npm run typecheck -w server   # or -w client (also checks client/e2e); tsc --noEmit
 npm run build -w client       # production build of the client
 npx prisma generate      # in server/; after install and after every schema change
 npx prisma migrate dev --name <verb_what>   # in server/; e.g. add_deleted_at_to_day_off, see data-model
@@ -55,7 +57,7 @@ npx prisma db seed       # in server/; demo data, clears all rows first
 npx prisma migrate reset # in server/; rebuilds dev.db from the migrations; run the seed after it
 ```
 
-Tests never touch `dev.db`. `server/vitest.config.ts` points `DATABASE_URL` to `test.db`, and `tests/setup/global-setup.ts` recreates it with `prisma migrate deploy` before each run. A schema change reaches the tests only through a migration. Test files run one at a time, because they share that one file.
+Tests never touch `dev.db`. `server/vitest.config.ts` points `DATABASE_URL` to `test.db`, and `tests/setup/global-setup.ts` recreates it with `prisma migrate deploy` before each run. A schema change reaches the tests only through a migration. Test files run one at a time, because they share that one file. The E2E tests use their own `e2e.db`, rebuilt and seeded before each run by `server/scripts/e2e-db.ts` (see `testing`). Run `npm test` and `npm run e2e` from one process at a time.
 
 Prisma is 7.x: the config is in `server/prisma.config.ts`, the client is generated into `server/src/generated/prisma/` (gitignored) and the app imports it through `server/src/lib/prisma.ts`. Never run `prisma init` in the project, because it adds Prisma's own skill files to `.claude/skills/`.
 
@@ -84,7 +86,7 @@ Project skills live in `.claude/skills/<name>/SKILL.md` and project agents in `.
 | `backend-developer` | `server/`, `docs/postman/`, the skills `api-conventions`, `data-model`, `scheduling-engine` and `testing` | `api-conventions`, `data-model`, `scheduling-engine`, `testing`, `refactor` |
 | `frontend-developer` | `client/`, the skills `ui-conventions` and `ui-design`, and the mirrored sections of `.github/copilot-instructions.md` | `ui-conventions`, `ui-design`, `refactor`, plus the server skills to use the API correctly |
 
-Each agent reads a skill when its task touches that area. An agent may update the skills it owns, but only to record what the brief already settled (a response shape, a field limit, a new helper). A change to a rule is a deviation: the agent stops and reports it, and the user decides. Neither agent creates a new skill, edits the agents, the other skills, the rest of `.github/`, this file or `docs/architecture.md`, or touches the root `package.json` or the lock file. Neither installs packages, runs the dev server or commits.
+Each agent reads a skill when its task touches that area. An agent may update the skills it owns, but only to record what the brief already settled (a response shape, a field limit, a new helper). A change to a rule is a deviation: the agent stops and reports it, and the user decides. Neither agent creates a new skill, edits the agents, the other skills, the rest of `.github/`, this file or `docs/architecture.md`, or touches the root `package.json` or the lock file. Neither installs packages, runs the dev server or commits. Both may run `npm run e2e`: it starts its own server and client on ports 3100 and 5180 with `e2e.db`, not the dev server.
 
 ### A feature with both agents
 

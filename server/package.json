@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "node --env-file=.env dist/index.js",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "e2e:server": "tsx scripts/e2e-db.ts && tsx src/index.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.10.0",

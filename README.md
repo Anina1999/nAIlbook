@@ -21,6 +21,9 @@ cd ..
 
 npm run dev                # server on :3000, client on :5173
 npm test                   # server tests, against a separate test.db
+
+npm exec -w client -- playwright install chromium   # once: the browser for the E2E tests
+npm run e2e                # browser tests; own server (:3100) and client (:5180) on a seeded e2e.db
 ```
 
 ## Demo accounts
@@ -59,7 +62,7 @@ npx prisma db seed         # reset does not run the seed in Prisma 7
 - **Server:** Node.js, Express, TypeScript, Prisma, SQLite
 - **Auth:** JWT and bcrypt
 - **Validation:** zod
-- **Tests:** Vitest, Supertest
+- **Tests:** Vitest, Supertest, Playwright
 
 ## Documentation
 

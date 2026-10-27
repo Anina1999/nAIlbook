@@ -7,7 +7,8 @@
   ],
   "scripts": {
     "dev": "concurrently -n server,client -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
-    "test": "npm test -w server"
+    "test": "npm test -w server",
+    "e2e": "npm run e2e -w client"
   },
   "devDependencies": {
     "concurrently": "^10.0.5"

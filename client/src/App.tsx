@@ -5,6 +5,7 @@ import AuthProvider from './contexts/AuthProvider';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Home from './pages/home/Home';
+import ManicuristPage from './pages/manicurist/Manicurist';
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/manicurists/:id" element={<ManicuristPage />} />
           <Route element={<GuestGuard />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />

@@ -1,7 +1,8 @@
 @reference "../../index.css";
 
+/* Capped and left-aligned on wide screens; the results below stay full width. */
 .form {
-  @apply flex flex-col gap-4 sm:flex-row sm:items-end;
+  @apply flex w-full max-w-3xl flex-col gap-4 sm:flex-row sm:items-end;
 }
 
 .field {

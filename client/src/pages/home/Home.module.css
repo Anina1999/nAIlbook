@@ -23,7 +23,7 @@
 
 /* py-1 leaves room for the card's 4px lift and its shadow on hover and focus. */
 .results {
-  @apply grid gap-4 py-1 sm:grid-cols-2;
+  @apply grid gap-4 py-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4;
 }
 
 .result {

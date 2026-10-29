@@ -1,0 +1,17 @@
+@reference "../../index.css";
+
+.button {
+  @apply inline-flex items-center justify-center rounded-lg min-h-11 px-5 text-base;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+  @apply motion-safe:transition-colors motion-safe:duration-150;
+  @apply disabled:text-muted disabled:bg-surface disabled:border-line disabled:cursor-not-allowed;
+}
+
+.primary {
+  /* The transparent border keeps the size equal to the disabled state. */
+  @apply bg-accent text-white border border-transparent font-semibold enabled:hover:bg-accent-strong;
+}
+
+.secondary {
+  @apply bg-raised text-ink border border-field;
+}

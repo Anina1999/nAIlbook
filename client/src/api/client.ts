@@ -52,6 +52,8 @@ export function onUnauthorized(handler: () => void): () => void {
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
+  /** Cancels the request. Only loads pass one; submits are never aborted. */
+  signal?: AbortSignal;
 };
 
 function isErrorBody(data: unknown): data is { error: { code: string; message: string; details?: unknown } } {
@@ -66,7 +68,7 @@ function isErrorBody(data: unknown): data is { error: { code: string; message: s
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body } = options;
+  const { method = 'GET', body, signal } = options;
   const token = getToken();
 
   const headers: Record<string, string> = {};
@@ -79,14 +81,21 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal,
     });
-  } catch {
+  } catch (error) {
+    // A request we cancelled is not a network failure: its AbortError goes on as it is.
+    if (signal?.aborted) throw error;
     throw new ApiError(0, 'NETWORK_ERROR', NETWORK_ERROR_MESSAGE);
   }
 
   if (res.status === 204) return undefined as T;
 
-  const data: unknown = await res.json().catch(() => null);
+  const data: unknown = await res.json().catch((error: unknown) => {
+    // An abort while the body is read keeps its AbortError too.
+    if (signal?.aborted) throw error;
+    return null;
+  });
 
   if (!res.ok) {
     const error = isErrorBody(data)

@@ -1,0 +1,9 @@
+@reference "../../index.css";
+
+.form {
+  @apply flex flex-col gap-4 sm:flex-row sm:items-end;
+}
+
+.field {
+  @apply min-w-0 sm:flex-1;
+}

@@ -7,7 +7,7 @@ description: Conventions for nAIlbook's React client, covering folder structure,
 
 The stack is React, TypeScript, Vite, React Router and Tailwind CSS, applied through CSS Modules (see `ui-design`, *Where styles live*).
 
-This skill covers structure and behaviour. How screens look (colour and font tokens, spacing, components, states, motion) and how UI text is written is in the `ui-design` skill.
+This skill covers structure and behaviour. The React practices behind it (folders, effects in hooks, aborting requests, controlled forms, the carousel) and their reasons are in `best-code-practices`. How screens look (colour and font tokens, spacing, components, states, motion) and how UI text is written is in the `ui-design` skill.
 
 ## Structure
 
@@ -15,29 +15,33 @@ This skill covers structure and behaviour. How screens look (colour and font tok
 client/src/
   api/          typed fetch wrapper (client.ts) + one file per resource (auth, manicurists, bookings, me)
   contexts/     one pair per context: <Name>Context.ts (createContext and its type) + <Name>Provider.tsx (the state)
-  hooks/        one hook per file (useAuth, useForm, useFrom, ...)
+  hooks/        one hook per file (useAuth, useForm, useFrom, useAsync, ...)
   components/   one folder per component, in kebab-case: <kebab-name>/<Name>.tsx + <Name>.module.css
     guards/     route guards as layout routes that render <Outlet /> (GuestGuard, ...)
   pages/        one folder per screen or group of screens: <page>/<Name>.tsx + <Name>.module.css
+  utils/        plain helpers with no React, one file per topic (format.ts: formatPrice, formatDuration)
 ```
 
 - **Every component and page has its own `.module.css`.** Screens that share a layout share one module: `pages/auth/Auth.module.css` serves `Login.tsx` and `Register.tsx`. How the styles are written (Tailwind `@apply` with the tokens) is in `ui-design`.
 - **Logic goes into hooks.** State or logic that more than one component could use lives in a hook in `hooks/`, not in the component. Components read a context through its hook (`useAuth()`), never with `use(AuthContext)` directly. A hook is added when the first screen needs it, not in advance.
-- **Shared components:** `layout/Layout` (header, the page column, `<Outlet />`), `header/Header`, `button/Button`, `form-field/FormField`, `error-message/ErrorMessage`, `loader/Loader` and `guards/GuestGuard`. Later screens add `SlotPicker`, `DatePicker`, `BookingList` and others the same way.
+- **Shared components:** `layout/Layout` (header, the page column, `<Outlet />`), `header/Header`, `button/Button`, `form-field/FormField`, `error-message/ErrorMessage`, `loader/Loader`, `price/Price` and `guards/GuestGuard`. Later screens add `SlotPicker`, `DatePicker`, `BookingList` and others the same way.
 - **Routes** are in `App.tsx`: `AuthProvider` around `Routes`, every screen nested under the `Layout` route, guest-only screens under `GuestGuard`.
 
 **API wrapper:**
 - reads `VITE_API_URL`;
 - attaches `Authorization: Bearer <token>`;
+- takes an optional `signal` (an `AbortSignal`) and passes it to `fetch`; an aborted request rethrows the browser's `AbortError` as it is, never as `NETWORK_ERROR`;
 - on an error, parses `{ error: { code, message, details } }` and throws an `ApiError` with those fields and the HTTP status;
 - when the request does not reach the server at all, throws an `ApiError` with the client-only code `NETWORK_ERROR` and the message «Няма връзка със сървъра. Проверете връзката и опитайте отново.»;
 - when an error response has no `{ error }` body, throws an `ApiError` with `INTERNAL_ERROR` and `UNEXPECTED_ERROR_MESSAGE`, «Нещо се обърка. Опитайте отново.» A form shows the same text when its submit throws anything other than an `ApiError`.
 
 Components call the wrapper in `client/src/api/`, never a raw `fetch`.
 
+**Loading data:** a screen loads its data with `useAsync(fn, deps)` from `hooks/`. Every run gets its own `AbortController`: `fn` receives the `signal` and passes it to the API function, and the effect's cleanup aborts the run, so an old answer never replaces a newer one (a new search, leaving the screen). It returns `{ data, error, loading }`: `error` is the message to show (the `ApiError` message, else `UNEXPECTED_ERROR_MESSAGE`), and `data` keeps the previous result while a new run loads. Submits are not aborted, because an aborted POST may still be saved on the server. The reasons and the patterns are in `best-code-practices`.
+
 **Auth state:**
 - Only the token is kept in `localStorage`, under the key `nailbook.token`. The user always comes from the server: from `GET /api/auth/me` at startup, and from the `{ token, user }` response after login or registration.
-- At startup, while `/me` is pending, `loading` is true: the header shows «Зареждане…» instead of the guest menu, and `GuestGuard` shows the `Loader`. A 401 clears the token. Any other error leaves the user a guest and keeps the token for the next load.
+- At startup, while `/me` is pending, `loading` is true (the call passes a `signal` and is aborted in the effect's cleanup, like every load): the header shows «Зареждане…» instead of the guest menu, and `GuestGuard` shows the `Loader`. A 401 clears the token. Any other error leaves the user a guest and keeps the token for the next load.
 - A `401 UNAUTHORIZED` on a request sent with a token logs the user out. `401 INVALID_CREDENTIALS` on login is sent without a token and only shows its message.
 - Logout first calls `POST /api/auth/logout`, which revokes the token on the server, and then clears `localStorage`. Clear it even when the call fails. Then go to `/`. While the call runs, «Изход» is disabled and says «Излизане…».
 - **Back to where the user came from.** A screen that sends a guest to login passes `state: { from: <path> }`. `useFrom()` reads it, with `/` as the default. After login or registration the user goes there; the links between `/login` and `/register` pass `state: { from }` on. `GuestGuard` sends a logged-in user to the same place, so a user who opens `/login` while logged in lands on `/`.
@@ -46,7 +50,7 @@ Components call the wrapper in `client/src/api/`, never a raw `fetch`.
 
 | Path | Who | Content |
 |------|-----|---------|
-| `/` | anyone | Search by city and service. Results are cards. |
+| `/` | anyone | Search by city and service: two optional text inputs «Град» and «Услуга» and a «Търсене» button. It searches on submit only, never while typing, and has no lists to pick a city or service from. The search lives in the URL, `/?city=…&service=…`: submitting sets the params, an empty field stays out of the URL, and the page loads the results from the params, so a reload, Back and a shared link show the same results with the inputs filled in. `/` without params shows every manicurist. Only manicurists with at least one active service are found (`api-conventions`). Results are cards (`ui-design`, *Components*, Search result): the whole card opens `/manicurists/:id` through the name link stretched over the card (`best-code-practices`), then the city and the services with price and duration. An empty result says what was not found and links «Изчистете търсенето» to `/`. |
 | `/manicurists/:id` | anyone | Profile, services, date picker, free slots and a Book button (a guest is sent to login) |
 | `/login`, `/register` | guest | Registration asks for the account type: client or manicurist (business). A client's form has no phone field and sends no `phone`. For a manicurist, phone (optional), city and address (required) and bio (optional) appear on the same form. They can be edited later on `/profile`. The required fields of `/register` are marked with `*` (`ui-design`, *Components*, the Input row); `/login` has no marks. |
 | `/my-bookings` | client | Upcoming bookings with Cancel, and past bookings |
@@ -61,7 +65,8 @@ Components call the wrapper in `client/src/api/`, never a raw `fetch`.
 - **Disabled dates in the picker:** past dates, days off from `/days-off` and weekdays without working hours.
 - **Text:** all UI text is in Bulgarian. Code identifiers and comments stay in English.
 - **Dates and times:** format with `Intl.DateTimeFormat('bg-BG', { timeZone: 'Europe/Sofia' })`, and send dates to the API as `YYYY-MM-DD`.
-- **Prices:** show prices as `35 €`.
+- **Prices:** always with cents: `25,00 €`, `35,50 €`. `formatPrice` in `utils/format.ts` gives the text; the `Price` component shows it with the cents smaller (`ui-design`, *Components*, Price).
+- **Durations:** show durations as `60 мин` (`formatDuration` in `utils/format.ts`).
 - **An empty phone is never shown.** `phone` is optional and comes as `""` when there is none (in `user`, `booking` and `manicurist`). The schedule, the manicurist's page and every other place that shows a phone leave out the whole phone line, label included, when it is empty.
 - **Errors:** show the server's `message`. Show field errors from `VALIDATION_ERROR` next to their inputs: `details[].path` is the field name (`"city"`). A detail whose path has no visible field goes into the error box: `useForm`'s `submitHandler(onSubmit, visibleFields)` takes the fields shown right now (default: every field in `values`). A radio group is a visible field, so its error goes under the fieldset, linked with `aria-describedby`. Forms have `noValidate` and send every visible field as a string, even an empty one, so the errors come from the server.
 - **Responsive layout:** design mobile-first with Tailwind. Every screen must work at 375px width.

@@ -38,7 +38,7 @@ The tokens are defined once, in the `@theme` block of `client/src/index.css` bel
 }
 ```
 
-Checked contrast (WCAG): `ink` on `surface` 15.0, `muted` on `surface` 5.7, `accent` on `surface` 7.0, white on `accent` 7.4, `accent` on `accent-soft` 6.0, `danger` on `danger-soft` 5.8, `success` on `surface` 5.0, `field` on `surface` 3.8 (control borders need 3:1).
+Checked contrast (WCAG): `ink` on `surface` 15.0, `muted` on `surface` 5.7, `accent` on `surface` 7.0, white on `accent` 7.4, `accent` on `accent-soft` 6.0, `danger` on `danger-soft` 5.8, `success` on `surface` 5.0, `field` on `surface` 3.8 (control borders need 3:1), and on a hovered search result `ink` on `accent-soft` 12.9, `muted` on `accent-soft` 4.9, `accent-strong` on `accent-soft` 8.0.
 
 - Components use only these tokens (`bg-surface`, `text-ink`, `border-field`, `bg-accent`...). Never a raw hex, an arbitrary colour (`text-[#...]`) or Tailwind's default palette (`pink-600`, `gray-700`).
 - `danger` is only for errors and destructive actions (cancel a booking, remove a day off). `accent` never marks an error.
@@ -90,7 +90,7 @@ Every component and page has its own CSS Module (`ui-conventions`, *Structure*).
 
 ## Components
 
-The radius depends on the role, not one radius for everything. Surfaces are separated by borders, not shadows; only a dialog has `shadow-lg`.
+The radius depends on the role, not one radius for everything. Surfaces are separated by borders, not shadows; only a dialog has `shadow-lg`, and a search result card gets `shadow-md` on hover and focus.
 
 | Element | Look |
 |---------|------|
@@ -104,7 +104,8 @@ The radius depends on the role, not one radius for everything. Surfaces are sepa
 | Slot chip | `rounded-full min-h-11 min-w-20 border border-field tabular-nums`. Selected: `bg-accent text-white border-accent`. |
 | Day in the date picker | at least 44×44px. Today: `ring-1 ring-accent`. Selected: `bg-accent text-white`. |
 | Disabled date, slot or button | the `disabled` attribute, `text-muted bg-surface border-line cursor-not-allowed`. Not only `opacity-50`. |
-| Search result | a card: `bg-raised border border-line rounded-xl p-4`, no shadow |
+| Search result | a card: `bg-raised border border-line rounded-xl p-4`, no shadow at rest. The whole card is a link (`ui-conventions`). On hover, and when its link has keyboard focus (`:focus-within`): `border-accent bg-accent-soft shadow-md` and `motion-safe:-translate-y-1`, with `transition` for 200ms, and the name turns `text-accent-strong` with no underline (the card's name link is the one link without `hover:underline`); with reduced motion only the border and the shadow change. The list or carousel leaves room around the cards, so the lift and the shadow are not cut. In the results carousel (with the map) the active card stays marked without hover: `border-accent ring-2 ring-accent`. |
+| Price | `tabular-nums`; the euros and ` €` in the surrounding size, the cents with their comma (`,00`) in `text-xs` with `align-super`: 25<sup>,00</sup> €. The text stays «25,00 €» for screen readers. |
 | Bookings, schedule, days off, services | rows in one container with `divide-y divide-line`, not a card per row |
 | Status badge | `rounded-full px-2 text-sm`; upcoming `bg-accent-soft text-accent-strong`, cancelled `text-muted` |
 
@@ -116,7 +117,7 @@ The radius depends on the role, not one radius for everything. Surfaces are sepa
 
 Every screen that loads data has four states:
 
-- **Loading:** «Зареждане…» or placeholder rows of the same height, so the layout does not jump. A button during its request is `disabled` and shows the action in progress: «Запазване…».
+- **Loading:** «Зареждане…» or placeholder rows of the same height, so the layout does not jump. A button during its request is `disabled` and shows the action in progress: «Запазване…». The one exception is a search form: its button stays enabled while results load, so a new search can start (the previous request is aborted, `ui-conventions`, *Loading data*), and the previous results stay on screen with `aria-busy` under a fixed-height «Зареждане…» line.
 - **Empty:** says what is missing and offers the next step.
 - **Error:** the server's message in a box with `bg-danger-soft text-danger rounded-lg p-3` above the form. Field errors go under their fields.
 - **Success:** a short confirmation in `text-success` next to the action, named after the action.
@@ -124,7 +125,7 @@ Every screen that loads data has four states:
 ## Motion
 
 - Motion only answers an action: a dialog opens, a slot is selected, a confirmation appears. Use `transition-colors` or `transition-opacity` for 150–200ms. Never animate width or height.
-- Put it behind `motion-safe:`. No entrance animations when a page loads, and no lift or zoom on hover.
+- Put it behind `motion-safe:`. No entrance animations when a page loads, and no lift or zoom on hover, except the search result card (*Components*), which lifts by 4px.
 
 ## Writing UI text
 

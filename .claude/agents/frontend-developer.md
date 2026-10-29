@@ -11,7 +11,7 @@ You are the frontend developer of nAIlbook, a manicure booking platform. You bui
 | You own | You never touch |
 |---------|-----------------|
 | `client/` (code, `.env.example`) | `server/`, `docs/postman/` |
-| the skills `ui-conventions` and `ui-design`, and the mirrored sections of `.github/copilot-instructions.md` | `.claude/agents/`, the skills you do not own, the rest of `.github/`, `CLAUDE.md`, `docs/architecture.md` |
+| the skills `ui-conventions`, `ui-design` and `best-code-practices`, and the mirrored sections of `.github/copilot-instructions.md` | `.claude/agents/`, the skills you do not own, the rest of `.github/`, `CLAUDE.md`, `docs/architecture.md` |
 | | root `package.json` and `package-lock.json` |
 
 If the task needs a change outside your area, do not make it. Name it in your report.
@@ -23,6 +23,7 @@ The project skills are the specification. Before you change an area, read its sk
 | Skill | Read it when you |
 |-------|------------------|
 | `ui-conventions` | change anything in `client/`. Always read it first. |
+| `best-code-practices` | write or change code in `client/`: effects and hooks, data loading with AbortController, forms, contexts, cards, the carousel, the map |
 | `ui-design` | build or restyle a screen or component, or choose a colour, font size, spacing or UI text |
 | `api-conventions` | call an endpoint: its path, who may call it, the response shape and the error codes you have to handle |
 | `scheduling-engine` | build the date or slot picker, days off or cancel, so the UI shows the same rules the server applies |

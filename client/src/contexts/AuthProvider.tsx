@@ -21,22 +21,21 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!getToken()) return;
-    let active = true;
+    // Aborted in the cleanup, so a remount (StrictMode, a fast reload) never leaves a second /me running.
+    const controller = new AbortController();
     authApi
-      .me()
+      .me(controller.signal)
       .then(({ user }) => {
-        if (active) setUser(user);
+        if (!controller.signal.aborted) setUser(user);
       })
       .catch((error: unknown) => {
         // A 401 clears the token; any other error keeps it for the next load.
-        if (active && error instanceof ApiError && error.status === 401) signOut();
+        if (!controller.signal.aborted && error instanceof ApiError && error.status === 401) signOut();
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       });
-    return () => {
-      active = false;
-    };
+    return () => controller.abort();
   }, [signOut]);
 
   const signIn = useCallback((response: authApi.AuthResponse) => {

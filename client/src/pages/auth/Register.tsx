@@ -9,8 +9,9 @@ import { useForm } from '../../hooks/useForm';
 import { useFrom } from '../../hooks/useFrom';
 import styles from './Auth.module.css';
 
-const CONTACT_FIELDS = ['role', 'name', 'email', 'phone', 'password'] as const;
-const PROFILE_FIELDS = ['city', 'address', 'bio'] as const;
+const CLIENT_FIELDS = ['role', 'name', 'email', 'password'] as const;
+// A client's form has no phone field; a manicurist's phone is optional.
+const MANICURIST_FIELDS = [...CLIENT_FIELDS, 'phone', 'city', 'address', 'bio'] as const;
 
 export default function Register() {
   const { register } = useAuth();
@@ -22,22 +23,29 @@ export default function Register() {
     role: 'CLIENT',
     name: '',
     email: '',
-    phone: '',
     password: '',
     // Manicurist fields keep their values while hidden, but are sent only while visible.
+    phone: '',
     city: '',
     address: '',
     bio: '',
   });
 
   const isManicurist = values.role === 'MANICURIST';
-  const visibleFields = isManicurist ? [...CONTACT_FIELDS, ...PROFILE_FIELDS] : CONTACT_FIELDS;
+  const visibleFields = isManicurist ? MANICURIST_FIELDS : CLIENT_FIELDS;
 
   const registerHandler = async (form: typeof values) => {
-    const contact = { name: form.name, email: form.email, phone: form.phone, password: form.password };
+    const contact = { name: form.name, email: form.email, password: form.password };
     const input: RegisterInput =
       form.role === 'MANICURIST'
-        ? { role: 'MANICURIST', ...contact, city: form.city, address: form.address, bio: form.bio }
+        ? {
+            role: 'MANICURIST',
+            ...contact,
+            phone: form.phone,
+            city: form.city,
+            address: form.address,
+            bio: form.bio,
+          }
         : { role: 'CLIENT', ...contact };
     await register(input);
     navigate(from, { replace: true });
@@ -48,8 +56,11 @@ export default function Register() {
       <h1 className={styles.title}>Регистрация</h1>
       {formError && <ErrorMessage message={formError.message} items={formError.items} />}
       <form noValidate className={styles.form} onSubmit={submitHandler(registerHandler, visibleFields)}>
+        <p className={styles.requiredNote}>Полетата със * са задължителни.</p>
         <fieldset className={styles.fieldset} aria-describedby={fieldErrors.role ? roleErrorId : undefined}>
-          <legend className={styles.legend}>Тип профил</legend>
+          <legend className={styles.legend}>
+            Тип профил<span aria-hidden="true">{' *'}</span>
+          </legend>
           <div className={styles.options}>
             <label className={styles.option}>
               <input
@@ -84,6 +95,7 @@ export default function Register() {
           label="Име"
           name="name"
           autoComplete="name"
+          required
           value={values.name}
           onChange={changeHandler}
           error={fieldErrors.name}
@@ -93,24 +105,28 @@ export default function Register() {
           name="email"
           type="email"
           autoComplete="email"
+          required
           value={values.email}
           onChange={changeHandler}
           error={fieldErrors.email}
         />
-        <FormField
-          label="Телефон"
-          name="phone"
-          type="tel"
-          autoComplete="tel"
-          value={values.phone}
-          onChange={changeHandler}
-          error={fieldErrors.phone}
-        />
+        {isManicurist && (
+          <FormField
+            label="Телефон"
+            name="phone"
+            type="tel"
+            autoComplete="tel"
+            value={values.phone}
+            onChange={changeHandler}
+            error={fieldErrors.phone}
+          />
+        )}
         <FormField
           label="Парола"
           name="password"
           type="password"
           autoComplete="new-password"
+          required
           value={values.password}
           onChange={changeHandler}
           error={fieldErrors.password}
@@ -121,6 +137,7 @@ export default function Register() {
               label="Град"
               name="city"
               autoComplete="address-level2"
+              required
               value={values.city}
               onChange={changeHandler}
               error={fieldErrors.city}
@@ -129,12 +146,13 @@ export default function Register() {
               label="Адрес"
               name="address"
               autoComplete="street-address"
+              required
               value={values.address}
               onChange={changeHandler}
               error={fieldErrors.address}
             />
             <FormField
-              label="Описание (по желание)"
+              label="Описание"
               name="bio"
               multiline
               value={values.bio}

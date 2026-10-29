@@ -223,6 +223,18 @@ describe('PUT /api/me/profile', () => {
     expect(res.body.manicurist.bio).toBe('');
   });
 
+  it('saves a missing phone as an empty string, as registration does', async () => {
+    const manicurist = await createManicurist();
+    const { phone: _, ...withoutPhone } = body;
+
+    const res = await put(manicurist, withoutPhone);
+
+    expect(res.status).toBe(200);
+    expect(res.body.manicurist.phone).toBe('');
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: manicurist.id } });
+    expect(user.phone).toBe('');
+  });
+
   it('returns 400 VALIDATION_ERROR for a blank name or a missing city', async () => {
     const manicurist = await createManicurist();
     const { city: _, ...withoutCity } = body;

@@ -56,6 +56,30 @@
           }
         },
         {
+          "name": "Register a client without phone (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('stores an empty phone', () => pm.expect(pm.response.json().user.phone).to.eql(''));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"client-nophone-{{$timestamp}}@example.com\",\n  \"password\": \"secret123\",\n  \"name\": \"Клиент без телефон\",\n  \"role\": \"CLIENT\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
+        {
           "name": "Register a manicurist with a profile (201)",
           "event": [
             {

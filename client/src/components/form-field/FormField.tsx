@@ -11,6 +11,8 @@ type FormFieldProps = {
   autoComplete?: string;
   /** Renders a textarea instead of an input. */
   multiline?: boolean;
+  /** Marks the field as required: ` *` after the label and `aria-required` on the control. */
+  required?: boolean;
 };
 
 export default function FormField({
@@ -22,6 +24,7 @@ export default function FormField({
   type = 'text',
   autoComplete,
   multiline = false,
+  required = false,
 }: FormFieldProps) {
   const id = useId();
   const errorId = `${id}-error`;
@@ -31,6 +34,7 @@ export default function FormField({
     value,
     onChange,
     autoComplete,
+    'aria-required': required ? true : undefined,
     'aria-invalid': error ? true : undefined,
     'aria-describedby': error ? errorId : undefined,
   };
@@ -39,6 +43,7 @@ export default function FormField({
     <div className={styles.field}>
       <label htmlFor={id} className={styles.label}>
         {label}
+        {required && <span aria-hidden="true">{' *'}</span>}
       </label>
       {multiline ? (
         <textarea {...shared} rows={4} className={`${styles.input} ${styles.textarea}`} />

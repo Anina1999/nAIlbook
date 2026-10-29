@@ -1,9 +1,40 @@
 @reference "../../index.css";
 
+.page {
+  @apply flex flex-col gap-8;
+}
+
 .title {
   @apply text-3xl font-bold;
 }
 
 .lead {
   @apply mt-2 text-muted;
+}
+
+.search {
+  @apply flex flex-col gap-4;
+}
+
+/* One line high even when empty. */
+.status {
+  @apply min-h-6 text-muted;
+}
+
+/* py-1 leaves room for the card's 4px lift and its shadow on hover and focus. */
+.results {
+  @apply grid gap-4 py-1 sm:grid-cols-2;
+}
+
+.result {
+  @apply min-w-0;
+}
+
+.empty {
+  @apply flex flex-col items-center gap-2 py-8 text-center wrap-break-word;
+}
+
+.clearLink {
+  @apply inline-flex items-center min-h-11 rounded-lg text-accent hover:text-accent-strong hover:underline;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
 }

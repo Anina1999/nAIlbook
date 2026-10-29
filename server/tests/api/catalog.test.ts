@@ -100,6 +100,45 @@ describe('GET /api/manicurists', () => {
     expect(byService.body.manicurists).toEqual([]);
   });
 
+  it('shows a new manicurist only while they have an active service', async () => {
+    await createManicurist({ name: 'Петя', city: 'Бургас' });
+    const registered = await request(app).post('/api/auth/register').send({
+      email: 'ana.new@example.com',
+      password: 'secret-password',
+      name: 'Ана Нова',
+      role: 'MANICURIST',
+      city: 'Бургас',
+      address: 'ул. Морска 3',
+    });
+    expect(registered.status).toBe(201);
+    const auth = { Authorization: `Bearer ${registered.body.token}` };
+
+    const beforeService = await search({ city: 'бургас' });
+    const created = await request(app).post('/api/me/services').set(auth).send(serviceBody);
+    expect(created.status).toBe(201);
+    const withService = await search({ city: 'бургас' });
+    const removed = await request(app).delete(`/api/me/services/${created.body.service.id}`).set(auth);
+    expect(removed.status).toBe(204);
+    const afterRemoval = await search({ city: 'бургас' });
+
+    expect(names(beforeService)).toEqual(['Петя']);
+    expect(names(withService)).toEqual(['Ана Нова', 'Петя']);
+    expect(afterRemoval.status).toBe(200);
+    expect(names(afterRemoval)).toEqual(['Петя']);
+  });
+
+  it('leaves out a manicurist whose services are all removed, even without filters', async () => {
+    const ana = await createManicurist({ name: 'Ана' });
+    await createManicurist({ name: 'Петя' });
+    await createService(ana, { name: 'Гел лак', deletedAt: new Date() });
+    await prisma.service.updateMany({ where: { manicuristId: ana.id }, data: { deletedAt: new Date() } });
+
+    const res = await search();
+
+    expect(res.status).toBe(200);
+    expect(names(res)).toEqual(['Петя']);
+  });
+
   it('returns 400 VALIDATION_ERROR when a parameter is repeated', async () => {
     const res = await request(app).get('/api/manicurists?city=София&city=Пловдив');
 

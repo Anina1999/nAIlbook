@@ -16,13 +16,14 @@ nAIlbook is a manicure booking platform. Clients find a manicurist by city and s
 | `data-model` | `schema.prisma`, migrations, field conventions, the seed, Prisma queries |
 | `scheduling-engine` | Free-slot calculation, booking validation, days off, cancel rules, the time model |
 | `ui-conventions` | Everything in `client/` |
+| `best-code-practices` | The React practices of the client and their reasons: folders, effects in hooks, AbortController, controlled forms, contexts, the URL as state, clickable cards, the Swiper carousel, widgets such as Leaflet |
 | `ui-design` | How the client looks and how its text reads: colour and font tokens, spacing, components, states, motion, UI wording |
 | `testing` | Test layout, Vitest config, the test database, helpers, dates in tests, the Postman collection |
 | `refactor` | Behaviour-preserving refactors: logic in the wrong file, extracting handlers and reusable functions, code smells, the plan and small verified steps |
 
 If the code has to differ from a skill, stop and ask. When the change is agreed, update the skill in the same change.
 
-`.github/copilot-instructions.md` mirrors `ui-conventions` for Copilot. Whenever `ui-conventions` changes, update the mirrored sections (Structure, Screens, UI rules) in the same change, so Copilot never works from old rules.
+`.github/copilot-instructions.md` mirrors `ui-conventions` and `best-code-practices` for Copilot. Whenever one of them changes, update the mirrored sections (Structure, Screens, UI rules, Code practices) in the same change, so Copilot never works from old rules.
 
 ## Stack
 
@@ -84,7 +85,7 @@ Project skills live in `.claude/skills/<name>/SKILL.md` and project agents in `.
 | Agent | Owns | Reads skills |
 |-------|------|--------------|
 | `backend-developer` | `server/`, `docs/postman/`, the skills `api-conventions`, `data-model`, `scheduling-engine` and `testing` | `api-conventions`, `data-model`, `scheduling-engine`, `testing`, `refactor` |
-| `frontend-developer` | `client/`, the skills `ui-conventions` and `ui-design`, and the mirrored sections of `.github/copilot-instructions.md` | `ui-conventions`, `ui-design`, `refactor`, plus the server skills to use the API correctly |
+| `frontend-developer` | `client/`, the skills `ui-conventions`, `ui-design` and `best-code-practices`, and the mirrored sections of `.github/copilot-instructions.md` | `ui-conventions`, `ui-design`, `best-code-practices`, `refactor`, plus the server skills to use the API correctly |
 
 Each agent reads a skill when its task touches that area. An agent may update the skills it owns, but only to record what the brief already settled (a response shape, a field limit, a new helper). A change to a rule is a deviation: the agent stops and reports it, and the user decides. Neither agent creates a new skill, edits the agents, the other skills, the rest of `.github/`, this file or `docs/architecture.md`, or touches the root `package.json` or the lock file. Neither installs packages, runs the dev server or commits. Both may run `npm run e2e`: it starts its own server and client on ports 3100 and 5180 with `e2e.db`, not the dev server.
 

@@ -50,13 +50,15 @@ function serviceNotFound() {
   return new AppError('NOT_FOUND', 'Услугата не е намерена.');
 }
 
-// Every manicurist, filtered by part of the city and part of an active
-// service name, ignoring case. An empty filter matches everyone.
+// Manicurists with at least one active service, filtered by part of the city
+// and part of an active service name, ignoring case. An empty filter matches
+// everyone who offers a service; a manicurist without one cannot be booked.
 export async function searchManicurists(filters: SearchFilters) {
   const city = lower(filters.city ?? '');
   const service = lower(filters.service ?? '');
 
   const profiles = await prisma.manicuristProfile.findMany({
+    where: { services: { some: activeServices } },
     select: {
       city: true,
       imageUrl: true,

@@ -40,8 +40,8 @@ export function login(input: LoginInput): Promise<AuthResponse> {
   return request<AuthResponse>('/auth/login', { method: 'POST', body: input });
 }
 
-export function me(): Promise<{ user: User }> {
-  return request<{ user: User }>('/auth/me');
+export function me(signal?: AbortSignal): Promise<{ user: User }> {
+  return request<{ user: User }>('/auth/me', { signal });
 }
 
 export function logout(): Promise<void> {

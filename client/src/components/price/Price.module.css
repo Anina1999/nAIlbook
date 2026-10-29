@@ -1,0 +1,10 @@
+@reference "../../index.css";
+
+.price {
+  @apply tabular-nums;
+}
+
+/* leading-none keeps the raised cents from making the line taller. */
+.cents {
+  @apply text-xs leading-none align-super;
+}

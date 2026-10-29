@@ -1,5 +1,6 @@
 @reference "../../index.css";
 
+/* The full window width with side padding (ui-design, Layout and spacing). */
 .column {
-  @apply mx-auto max-w-3xl px-4 py-8;
+  @apply w-full px-4 sm:px-6 lg:px-8 py-8;
 }

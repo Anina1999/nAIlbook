@@ -1,0 +1,123 @@
+@reference "../../index.css";
+
+.page {
+  @apply flex flex-col gap-8;
+}
+
+.profile {
+  @apply flex flex-col gap-2;
+}
+
+.title {
+  @apply text-2xl font-bold wrap-break-word;
+}
+
+.place {
+  @apply text-muted wrap-break-word;
+}
+
+.contacts {
+  @apply flex flex-col;
+}
+
+.contact {
+  @apply flex flex-wrap items-center gap-x-2;
+}
+
+.contactLabel {
+  @apply font-semibold;
+}
+
+.contactValue {
+  @apply min-w-0;
+}
+
+.link {
+  @apply inline-flex items-center min-h-11 min-w-0 rounded-lg wrap-anywhere text-accent hover:text-accent-strong hover:underline;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+.bio {
+  @apply max-w-prose wrap-break-word;
+}
+
+.step {
+  @apply flex flex-col gap-4;
+}
+
+.stepTitle {
+  @apply text-lg font-semibold;
+}
+
+.fieldset {
+  @apply min-w-0;
+}
+
+/* A legend is not a flex item, so the space under it is a margin. */
+.fieldset > .stepTitle {
+  @apply mb-4;
+}
+
+/* Services are rows in one container (ui-design, Components). */
+.options {
+  @apply flex flex-col overflow-hidden rounded-xl border border-line bg-raised divide-y divide-line;
+}
+
+.option {
+  @apply flex items-center gap-3 min-h-11 px-4 py-3 cursor-pointer;
+  @apply motion-safe:transition-colors motion-safe:duration-150;
+  @apply has-checked:bg-accent-soft;
+}
+
+.radio {
+  @apply size-5 shrink-0 accent-accent;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+.optionText {
+  @apply flex min-w-0 flex-1 flex-col;
+}
+
+.optionMain {
+  @apply flex flex-wrap items-baseline justify-between gap-x-4;
+}
+
+.description {
+  @apply text-sm text-muted wrap-break-word;
+}
+
+.serviceName {
+  @apply min-w-0 wrap-break-word;
+}
+
+.serviceMeta {
+  @apply flex gap-3 whitespace-nowrap;
+}
+
+.duration {
+  @apply text-sm text-muted tabular-nums;
+}
+
+.success {
+  @apply text-success;
+}
+
+.successTitle {
+  @apply font-semibold;
+}
+
+.summary {
+  @apply flex flex-col items-start gap-4;
+}
+
+.summaryText {
+  @apply tabular-nums wrap-break-word;
+}
+
+.note {
+  @apply text-muted;
+}
+
+.empty {
+  @apply flex flex-col items-center gap-2 py-8 text-center;
+}

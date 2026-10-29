@@ -1,0 +1,128 @@
+@reference "../../index.css";
+
+/* A pink board around the week navigation and the table; the colour sets it apart,
+   so it has no border. Every cell on it is a white tile (ui-design, Week table). */
+.schedule {
+  @apply flex flex-col gap-2 rounded-xl bg-accent-soft p-2 sm:p-4;
+}
+
+/* The week navigation is its own white bar, set apart from the day headers below it. */
+.nav {
+  @apply mb-4 flex items-center justify-between gap-2 rounded-lg bg-raised sm:mb-6;
+}
+
+/* ink on white: 15.9. */
+.title {
+  @apply min-w-0 text-center text-lg font-semibold text-ink tabular-nums;
+}
+
+/* A quiet icon button inside the bar, with no tile of its own; the transparent border
+   keeps its size when disabled. */
+.navButton {
+  @apply inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-transparent bg-transparent text-ink;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+  @apply motion-safe:transition-colors motion-safe:duration-150;
+  @apply enabled:hover:bg-accent-soft;
+  @apply disabled:text-muted disabled:bg-surface disabled:border-line disabled:cursor-not-allowed;
+}
+
+.icon {
+  @apply size-5;
+}
+
+/* One line high even when empty. muted on accent-soft: 4.9. */
+.status {
+  @apply min-h-6 text-muted;
+}
+
+/* Scrolls on its own only if a week cannot fit; the page never does. The edge spacing
+   of the table leaves room for the focus outline of the outer buttons. */
+.scroller {
+  @apply overflow-x-auto;
+}
+
+/* Separate cells with pink gaps between them. Fixed layout: the time column is 44px
+   and the days share the rest evenly. */
+.table {
+  /* A 2px column gap below sm keeps six day columns at 44px at 375px. */
+  @apply w-full table-fixed border-separate border-spacing-x-0.5 border-spacing-y-1 sm:border-spacing-2;
+}
+
+/* The empty corner has no tile. */
+.corner {
+  @apply w-11;
+}
+
+/* Day headers are text on the pink board, not tiles, so they do not look like the times. */
+.colHeader {
+  @apply h-11 px-0.5 pb-1 text-center align-bottom font-normal;
+}
+
+/* The short underline under each header. */
+.headerLabel {
+  @apply inline-block border-b-2 border-accent px-1 pb-1;
+}
+
+/* ink on accent-soft: 12.9. */
+.weekday {
+  @apply block font-semibold text-ink;
+}
+
+/* muted on accent-soft: 4.9. */
+.dayMonth {
+  @apply block text-sm text-muted tabular-nums;
+}
+
+.rowHeader {
+  @apply h-11 rounded-lg bg-raised text-center align-middle text-sm font-normal text-ink tabular-nums;
+}
+
+/* The tile of a time: «—» (muted on white: 6.0) or the button that fills it. */
+.cell {
+  @apply h-11 rounded-lg bg-raised p-0 text-center align-middle;
+}
+
+/* accent on white: 7.4, white on accent: 7.4, accent on accent-soft (hover): 6.0. */
+.slot {
+  @apply flex min-h-11 min-w-11 size-full items-center justify-center rounded-lg border border-accent bg-raised font-semibold text-accent tabular-nums;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+  @apply motion-safe:transition-colors motion-safe:duration-150;
+}
+
+.slot:not([aria-pressed='true']):hover {
+  @apply bg-accent-soft;
+}
+
+.slot[aria-pressed='true'] {
+  @apply bg-accent text-white;
+}
+
+/* Below sm the button shows no text (ui-design, Week table). */
+.time {
+  @apply hidden sm:inline;
+}
+
+.none {
+  @apply text-muted;
+}
+
+/* One tall white tile over all rows. */
+.dayOff {
+  @apply rounded-lg bg-raised px-0.5 py-2 text-center align-middle text-sm text-muted;
+}
+
+/* A narrow column reads the words top to bottom instead of breaking them. */
+.dayOffText {
+  @variant max-sm {
+    writing-mode: vertical-rl;
+  }
+}
+
+/* muted on accent-soft: 4.9. */
+.empty {
+  @apply py-4 text-center text-muted;
+}
+
+.srOnly {
+  @apply sr-only;
+}

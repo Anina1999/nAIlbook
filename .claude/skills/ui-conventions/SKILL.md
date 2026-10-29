@@ -48,7 +48,7 @@ Components call the wrapper in `client/src/api/`, never a raw `fetch`.
 |------|-----|---------|
 | `/` | anyone | Search by city and service. Results are cards. |
 | `/manicurists/:id` | anyone | Profile, services, date picker, free slots and a Book button (a guest is sent to login) |
-| `/login`, `/register` | guest | Registration asks for the account type: client or manicurist (business). For a manicurist, city and address (required) and bio (optional) appear on the same form. They can be edited later on `/profile`. |
+| `/login`, `/register` | guest | Registration asks for the account type: client or manicurist (business). A client's form has no phone field and sends no `phone`. For a manicurist, phone (optional), city and address (required) and bio (optional) appear on the same form. They can be edited later on `/profile`. The required fields of `/register` are marked with `*` (`ui-design`, *Components*, the Input row); `/login` has no marks. |
 | `/my-bookings` | client | Upcoming bookings with Cancel, and past bookings |
 | `/schedule` | manicurist | Bookings for the selected day, with Cancel |
 | `/days-off` | manicurist | Add or remove days off. The `DAY_HAS_BOOKINGS` warning lists the conflicting bookings. |
@@ -62,6 +62,7 @@ Components call the wrapper in `client/src/api/`, never a raw `fetch`.
 - **Text:** all UI text is in Bulgarian. Code identifiers and comments stay in English.
 - **Dates and times:** format with `Intl.DateTimeFormat('bg-BG', { timeZone: 'Europe/Sofia' })`, and send dates to the API as `YYYY-MM-DD`.
 - **Prices:** show prices as `35 €`.
+- **An empty phone is never shown.** `phone` is optional and comes as `""` when there is none (in `user`, `booking` and `manicurist`). The schedule, the manicurist's page and every other place that shows a phone leave out the whole phone line, label included, when it is empty.
 - **Errors:** show the server's `message`. Show field errors from `VALIDATION_ERROR` next to their inputs: `details[].path` is the field name (`"city"`). A detail whose path has no visible field goes into the error box: `useForm`'s `submitHandler(onSubmit, visibleFields)` takes the fields shown right now (default: every field in `values`). A radio group is a visible field, so its error goes under the fieldset, linked with `aria-describedby`. Forms have `noValidate` and send every visible field as a string, even an empty one, so the errors come from the server.
 - **Responsive layout:** design mobile-first with Tailwind. Every screen must work at 375px width.
 - **Accessibility basics:**

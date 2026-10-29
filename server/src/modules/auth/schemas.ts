@@ -15,10 +15,11 @@ const password = z
 const requiredText = (message: string) => z.string().trim().min(1, { error: message });
 
 // Shared with PUT /api/me/profile (catalog), so editing a profile follows the
-// same rules as registering it.
+// same rules as registering it. The phone is optional for every role: a missing
+// or blank one is stored as "" (User.phone stays a non-null String).
 export const contactFields = {
   name: requiredText('Въведете име.'),
-  phone: requiredText('Въведете телефон.'),
+  phone: z.string().trim().default(''),
 };
 
 export const profileFields = {

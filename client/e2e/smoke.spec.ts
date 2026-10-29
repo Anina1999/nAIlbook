@@ -21,6 +21,15 @@ test('the API runs on the seeded E2E database', async ({ request }) => {
   const res = await request.get(`${API_URL}/manicurists`);
 
   expect(res.status()).toBe(200);
-  const { manicurists } = await res.json();
-  expect(manicurists).toHaveLength(5);
+  // Other tests may register manicurists, so check for the seeded ones rather than an exact count.
+  const { manicurists } = (await res.json()) as { manicurists: { name: string }[] };
+  expect(manicurists.map((m) => m.name)).toEqual(
+    expect.arrayContaining([
+      'Мария Петрова',
+      'Елена Георгиева',
+      'Ива Димитрова',
+      'Десислава Стоянова',
+      'Габриела Николова',
+    ]),
+  );
 });

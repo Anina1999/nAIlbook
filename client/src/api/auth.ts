@@ -18,7 +18,8 @@ export type LoginInput = {
 type ContactInput = {
   name: string;
   email: string;
-  phone: string;
+  /** Optional; the server stores a missing phone as "". */
+  phone?: string;
   password: string;
 };
 

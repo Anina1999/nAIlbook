@@ -12,6 +12,10 @@
   @apply flex flex-col gap-4;
 }
 
+.requiredNote {
+  @apply text-sm text-muted;
+}
+
 .fieldset {
   @apply flex flex-col gap-2;
 }

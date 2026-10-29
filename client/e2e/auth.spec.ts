@@ -11,10 +11,20 @@ function uniqueEmail(projectName: string) {
   return `e2e-${projectName}-${Date.now()}@example.com`;
 }
 
+const REQUIRED_NOTE = 'Полетата със * са задължителни.';
+
+/**
+ * «Име» by its accessible name. getByLabel matches the label's raw text, which also
+ * holds the aria-hidden ` *`; the role query checks the name a screen reader hears.
+ */
+function nameField(page: Page) {
+  return page.getByRole('textbox', { name: 'Име', exact: true });
+}
+
+/** Fills the fields every role has. The phone is not one of them: only a manicurist has it, and it is optional. */
 async function fillContactFields(page: Page, fields: { name: string; email: string }) {
-  await page.getByLabel('Име', { exact: true }).fill(fields.name);
+  await nameField(page).fill(fields.name);
   await page.getByLabel('Имейл').fill(fields.email);
-  await page.getByLabel('Телефон').fill('0888123456');
   await page.getByLabel('Парола').fill('parola123');
 }
 
@@ -30,12 +40,51 @@ async function horizontalOverflow(page: Page) {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
-test('a guest registers as a client and sees their name in the menu', async ({ page }, testInfo) => {
+test('a guest registers as a client without a phone field and sees their name in the menu', async ({
+  page,
+}, testInfo) => {
   await page.goto('/register');
+  await expect(nameField(page)).toBeVisible();
+  await expect(page.getByLabel('Телефон')).toHaveCount(0);
+
   await fillContactFields(page, { name: 'Мила Тестова', email: uniqueEmail(testInfo.project.name) });
   await page.getByRole('button', { name: 'Регистрирай се' }).click();
 
   await expect(mainNav(page).getByText('Мила Тестова')).toBeVisible();
+});
+
+test('a manicurist registers without a phone and sees their name in the menu', async ({ page }, testInfo) => {
+  await page.goto('/register');
+  await page.getByLabel('Маникюрист').check();
+  await expect(page.getByLabel('Телефон')).toHaveValue('');
+  await fillContactFields(page, { name: 'Нели Тестова', email: uniqueEmail(testInfo.project.name) });
+  await page.getByLabel('Град').fill('София');
+  await page.getByLabel('Адрес').fill('ул. Тестова 2');
+  await page.getByRole('button', { name: 'Регистрирай се' }).click();
+
+  await expect(mainNav(page).getByText('Нели Тестова')).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test('the required fields of /register are marked for screen readers and the optional ones are not', async ({
+  page,
+}) => {
+  await page.goto('/register');
+  await expect(nameField(page)).toHaveAttribute('aria-required', 'true');
+
+  await page.getByLabel('Маникюрист').check();
+  await expect(page.getByLabel('Град')).toHaveAttribute('aria-required', 'true');
+  await expect(page.getByLabel('Телефон')).not.toHaveAttribute('aria-required');
+  await expect(page.getByLabel('Описание')).not.toHaveAttribute('aria-required');
+});
+
+test('the required-fields note is on /register and not on /login', async ({ page }) => {
+  await page.goto('/register');
+  await expect(page.getByText(REQUIRED_NOTE)).toBeVisible();
+
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Вход' })).toBeVisible();
+  await expect(page.getByText(REQUIRED_NOTE)).toHaveCount(0);
 });
 
 test('a manicurist without a city sees the error under «Град»', async ({ page }, testInfo) => {

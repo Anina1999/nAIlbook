@@ -74,6 +74,35 @@ describe('POST /api/auth/register', () => {
     expect(profile?.bio).toBe('');
   });
 
+  it('accepts a client without a phone and stores an empty one', async () => {
+    const { phone: _, ...withoutPhone } = client;
+    const res = await register(withoutPhone);
+
+    expect(res.status).toBe(201);
+    expect(res.body.user.phone).toBe('');
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: res.body.user.id } });
+    expect(user.phone).toBe('');
+  });
+
+  it('accepts a manicurist without a phone and stores an empty one', async () => {
+    const { phone: _, ...withoutPhone } = manicurist;
+    const res = await register(withoutPhone);
+
+    expect(res.status).toBe(201);
+    expect(res.body.user.phone).toBe('');
+    const profile = await prisma.manicuristProfile.findUnique({ where: { userId: res.body.user.id } });
+    expect(profile).toMatchObject({ city: 'Пловдив', address: 'ул. Главна 5' });
+  });
+
+  it('trims a blank phone to an empty one', async () => {
+    const res = await register({ ...client, phone: '   ' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.user.phone).toBe('');
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: res.body.user.id } });
+    expect(user.phone).toBe('');
+  });
+
   it('stores the password as a bcrypt hash', async () => {
     const res = await register(client);
 

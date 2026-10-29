@@ -54,8 +54,11 @@ Booking           id, clientId (FK), manicuristId (FK), serviceId (FK),
 ## Seed
 
 The seed must give a working demo right after install:
-- about 5 manicurists in 2–3 cities (for example Sofia, Plovdiv and Veliko Tarnovo), each with 2–4 services and working hours;
+- about 5 manicurists in 2–3 cities (for example Sofia, Plovdiv and Veliko Tarnovo), each with 2–4 services and working hours. The demo manicurist (Мария) is the exception: she has 7, with durations off the 30-minute grid (40 minutes) and long ones (90 and 180 minutes), for the packed day below;
 - at least one future day off;
-- one client account with a past booking and an upcoming booking.
+- one client account with a past booking and an upcoming booking. The upcoming 11:00 booking with Мария stays the client's first upcoming booking with her, because the Postman collection finds it that way;
+- a packed day: Мария's first working day after the date of that 11:00 booking that is not the day off, booked by the demo client back to back: 09:00 Класически маникюр (to 10:00), 10:00 Педикюр (to 11:30), 11:30 Парафинова терапия за ръце (40 minutes, to 12:10), 14:00 Ноктопластика (to 17:00) and 17:00 Смяна на дизайн / счупен нокът (to 17:30). So 12:10, off the grid, is offered as a start. The seed throws if the packed day falls on the day off or on the date of the 11:00 booking.
+
+Seed bookings get `endAt` the way the API computes it: the UTC start plus the service duration.
 
 Demo account passwords are listed only in the README. Use fake names, emails and phone numbers, never real personal data.

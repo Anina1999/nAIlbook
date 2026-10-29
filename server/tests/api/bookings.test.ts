@@ -5,7 +5,7 @@ import { addDays } from '../../src/lib/time.js';
 import { authHeader } from '../helpers/auth.js';
 import { daysAgo, nextWeekday, slotAt } from '../helpers/dates.js';
 import { prisma, resetDb } from '../helpers/db.js';
-import { createBooking, createClient, createDayOff, createManicurist } from '../helpers/factories.js';
+import { createBooking, createClient, createDayOff, createManicurist, createService } from '../helpers/factories.js';
 
 beforeEach(() => resetDb());
 afterAll(() => prisma.$disconnect());
@@ -71,7 +71,7 @@ describe('GET /api/manicurists/:id/slots', () => {
     const res = await slots(manicurist.id, { serviceId: service.id, date });
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ date, dayOff: true, slots: [] });
+    expect(res.body).toEqual({ date, dayOff: true, slots: [], busy: [] });
   });
 
   it('ignores a removed day off', async () => {
@@ -92,7 +92,91 @@ describe('GET /api/manicurists/:id/slots', () => {
     const res = await slots(manicurist.id, { serviceId: service.id, date });
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ date, dayOff: false, slots: [] });
+    expect(res.body).toEqual({ date, dayOff: false, slots: [], busy: [] });
+  });
+
+  it('lists the busy intervals of the day by start time, with only startAt and endAt, cancelled ones left out', async () => {
+    const { client, manicurist, service } = await setup();
+    const short = await createService(manicurist, { name: 'Сваляне', durationMin: 40 });
+    const date = nextWeekday(MONDAY);
+    // Created out of order, so the order in busy comes from startAt.
+    await createBooking(client, manicurist, { startAt: new Date(slotAt(date, '14:00')) });
+    await createBooking(client, manicurist, { startAt: new Date(slotAt(date, '10:30')), service: short });
+    await createBooking(client, manicurist, {
+      startAt: new Date(slotAt(date, '16:00')),
+      status: 'CANCELLED',
+      cancelledBy: 'CLIENT',
+      cancelReason: 'Разболях се.',
+    });
+    // Another date and another manicurist stay out.
+    await createBooking(client, manicurist, { startAt: new Date(slotAt(addDays(date, 1), '10:00')) });
+    await createBooking(client, await createManicurist(), { startAt: new Date(slotAt(date, '12:00')) });
+
+    const res = await slots(manicurist.id, { serviceId: service.id, date });
+
+    expect(res.status).toBe(200);
+    expect(res.body.busy).toEqual([
+      { startAt: slotAt(date, '10:30'), endAt: slotAt(date, '11:10') },
+      { startAt: slotAt(date, '14:00'), endAt: slotAt(date, '15:00') },
+    ]);
+  });
+
+  it('offers the end of a 40-minute booking as a start, between the grid starts', async () => {
+    const { client, manicurist, service } = await setup();
+    const short = await createService(manicurist, { name: 'Сваляне', durationMin: 40 });
+    const date = nextWeekday(MONDAY);
+    await createBooking(client, manicurist, { startAt: new Date(slotAt(date, '10:30')), service: short });
+
+    const res = await slots(manicurist.id, { serviceId: service.id, date });
+
+    expect(res.status).toBe(200);
+    // 60 minutes: 09:00, 09:30, then 11:10 (the booking end) and the grid from 11:30.
+    expect(res.body.slots.slice(0, 4)).toEqual([
+      slotAt(date, '09:00'),
+      slotAt(date, '09:30'),
+      slotAt(date, '11:10'),
+      slotAt(date, '11:30'),
+    ]);
+    expect(res.body.slots).not.toContain(slotAt(date, '11:00'));
+    expect(res.body.slots).toHaveLength(15);
+  });
+
+  it('returns the busy intervals and no slots without a serviceId', async () => {
+    const { client, manicurist } = await setup();
+    const date = nextWeekday(MONDAY);
+    await createBooking(client, manicurist, { startAt: new Date(slotAt(date, '10:00')) });
+
+    const res = await slots(manicurist.id, { date });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      date,
+      dayOff: false,
+      slots: [],
+      busy: [{ startAt: slotAt(date, '10:00'), endAt: slotAt(date, '11:00') }],
+    });
+  });
+
+  it('returns dayOff true and nothing busy without a serviceId on a day off', async () => {
+    const { manicurist } = await setup();
+    const date = nextWeekday(MONDAY);
+    await createDayOff(manicurist, date);
+
+    const res = await slots(manicurist.id, { date });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ date, dayOff: true, slots: [], busy: [] });
+  });
+
+  it('returns 404 NOT_FOUND without a serviceId for an unknown manicurist or a client', async () => {
+    const { client, manicurist } = await setup();
+    const date = nextWeekday(MONDAY);
+
+    for (const id of [manicurist.id + 1000, client.id]) {
+      const res = await slots(id, { date });
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+    }
   });
 
   it('returns 400 VALIDATION_ERROR for a bad or missing query', async () => {
@@ -102,7 +186,7 @@ describe('GET /api/manicurists/:id/slots', () => {
       { serviceId: service.id, date: '02.11.2026' },
       { serviceId: service.id, date: '2026-02-30' },
       { serviceId: service.id },
-      { date: nextWeekday(MONDAY) },
+      {},
     ]) {
       const res = await slots(manicurist.id, query);
       expect(res.status).toBe(400);
@@ -160,6 +244,48 @@ describe('POST /api/bookings', () => {
     });
     const saved = await prisma.booking.findUniqueOrThrow({ where: { id: res.body.booking.id } });
     expect(saved).toMatchObject({ clientId: client.id, manicuristId: manicurist.id, serviceId: service.id });
+  });
+
+  it('returns 201 for a start exactly at the end of a 40-minute booking, with endAt = start + duration', async () => {
+    const { client, manicurist, service } = await setup();
+    const short = await createService(manicurist, { name: 'Сваляне', durationMin: 40 });
+    const date = nextWeekday(MONDAY);
+    await createBooking(client, manicurist, { startAt: new Date(slotAt(date, '10:30')), service: short });
+
+    const res = await book(client, {
+      manicuristId: manicurist.id,
+      serviceId: service.id,
+      startAt: slotAt(date, '11:10'),
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.booking).toMatchObject({ startAt: slotAt(date, '11:10'), endAt: slotAt(date, '12:10') });
+  });
+
+  it('returns 400 SLOT_INVALID for an off-grid start once the booking that ended there is cancelled', async () => {
+    const { client, manicurist, service } = await setup();
+    const short = await createService(manicurist, { name: 'Сваляне', durationMin: 40 });
+    const date = nextWeekday(MONDAY);
+    const before = await createBooking(client, manicurist, { startAt: new Date(slotAt(date, '10:30')), service: short });
+    const slotsOf = () => request(app).get(`/api/manicurists/${manicurist.id}/slots`).query({ serviceId: service.id, date });
+
+    expect((await slotsOf()).body.slots).toContain(slotAt(date, '11:10'));
+    const cancelled = await request(app)
+      .patch(`/api/bookings/${before.id}/cancel`)
+      .set(authHeader(client))
+      .send({ reason: 'Разболях се.' });
+    expect(cancelled.status).toBe(200);
+    expect((await slotsOf()).body.slots).not.toContain(slotAt(date, '11:10'));
+
+    const res = await book(client, {
+      manicuristId: manicurist.id,
+      serviceId: service.id,
+      startAt: slotAt(date, '11:10'),
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('SLOT_INVALID');
+    expect(await prisma.booking.count({ where: { status: 'BOOKED' } })).toBe(0);
   });
 
   it('returns 409 SLOT_TAKEN when the slot overlaps an active booking', async () => {

@@ -111,5 +111,113 @@ describe('calculateAvailableSlots', () => {
         '2026-10-25T08:00:00.000Z',
       ]);
     });
+
+    it('offers the end of a booking off the grid on 2026-03-29', () => {
+      // Booked 09:00–09:40 local (06:00Z–06:40Z); 09:40 + 60 min ends at 10:40.
+      const bookings: BookingInput[] = [
+        { startAt: new Date('2026-03-29T06:00:00.000Z'), endAt: new Date('2026-03-29T06:40:00.000Z'), status: 'BOOKED' },
+      ];
+      expect(calculateAvailableSlots({ durationMin: 60 }, '2026-03-29', sundayHours, [], bookings, longBefore)).toEqual(
+        ['2026-03-29T06:40:00.000Z', '2026-03-29T07:00:00.000Z'],
+      );
+    });
+
+    it('offers the end of a booking off the grid on 2026-10-25', () => {
+      // Booked 09:00–09:40 local (07:00Z–07:40Z); 09:40 + 60 min ends at 10:40.
+      const bookings: BookingInput[] = [
+        { startAt: new Date('2026-10-25T07:00:00.000Z'), endAt: new Date('2026-10-25T07:40:00.000Z'), status: 'BOOKED' },
+      ];
+      expect(calculateAvailableSlots({ durationMin: 60 }, '2026-10-25', sundayHours, [], bookings, longBefore)).toEqual(
+        ['2026-10-25T07:40:00.000Z', '2026-10-25T08:00:00.000Z'],
+      );
+    });
+
+    it('offers a booking end in the repeated hour of 2026-10-25 as that instant, not its first occurrence', () => {
+      // 02:00–06:00 local. Booked from the first 03:30 (00:30Z) for 70 minutes,
+      // so it ends at the second 03:40 (01:40Z). Rebuilt through sofiaToUtc,
+      // 03:40 would be the first one (00:40Z), which the booking covers.
+      const hours: WorkingHoursInput[] = [{ weekday: 0, startMin: h(2), endMin: h(6) }];
+      const bookings: BookingInput[] = [
+        { startAt: new Date('2026-10-25T00:30:00.000Z'), endAt: new Date('2026-10-25T01:40:00.000Z'), status: 'BOOKED' },
+      ];
+      expect(calculateAvailableSlots({ durationMin: 60 }, '2026-10-25', hours, [], bookings, longBefore)).toEqual([
+        '2026-10-24T23:00:00.000Z',
+        '2026-10-24T23:30:00.000Z',
+        '2026-10-25T01:40:00.000Z',
+        '2026-10-25T02:00:00.000Z',
+        '2026-10-25T02:30:00.000Z',
+        '2026-10-25T03:00:00.000Z',
+      ]);
+    });
+  });
+
+  describe('with starts at the end of a booking', () => {
+    it('offers the end of a 40-minute booking (10:30 + 40 min = 11:10 local)', () => {
+      // Booked 10:30–11:10 local; 10:00, 10:30 and 11:00 overlap it.
+      const bookings = [booking('08:30', '09:10')];
+      expect(calculateAvailableSlots({ durationMin: 60 }, DATE, HOURS, [], bookings, BEFORE)).toEqual(
+        ['09:10', '09:30', '10:00', '10:30', '11:00'].map(utc),
+      );
+    });
+
+    it('does not offer a booking end when the service does not fit before the next booking', () => {
+      // Booked 10:30–11:10 and 12:00–13:00 local; 11:10 + 60 min would end at 12:10.
+      const bookings = [booking('08:30', '09:10'), booking('10:00', '11:00')];
+      expect(calculateAvailableSlots({ durationMin: 60 }, DATE, HOURS, [], bookings, BEFORE)).toEqual(
+        ['11:00'].map(utc),
+      );
+    });
+
+    it('does not offer a booking end when the service does not fit before the end of the day', () => {
+      // Booked 12:30–13:10 local; 13:10 + 60 min would end at 14:10, after 14:00.
+      const bookings = [booking('10:30', '11:10')];
+      expect(calculateAvailableSlots({ durationMin: 60 }, DATE, HOURS, [], bookings, BEFORE)).toEqual(
+        ['08:00', '08:30', '09:00', '09:30'].map(utc),
+      );
+    });
+
+    it('offers a booking end when the service ends exactly at the end of the day', () => {
+      // Booked 12:30–13:10 local; 13:10 + 50 min ends at 14:00.
+      const bookings = [booking('10:30', '11:10')];
+      expect(calculateAvailableSlots({ durationMin: 50 }, DATE, HOURS, [], bookings, BEFORE)).toEqual(
+        ['08:00', '08:30', '09:00', '09:30', '11:10'].map(utc),
+      );
+    });
+
+    it('does not offer the end of a cancelled booking', () => {
+      const bookings = [booking('08:30', '09:10', 'CANCELLED')];
+      expect(calculateAvailableSlots({ durationMin: 60 }, DATE, HOURS, [], bookings, BEFORE)).toEqual(ALL_WEDNESDAY);
+    });
+
+    it('does not offer a booking end before the working hours start', () => {
+      // Booked 09:00–09:40 local, before the 10:00 start; 09:40 is not a candidate.
+      const bookings = [booking('07:00', '07:40')];
+      expect(calculateAvailableSlots({ durationMin: 60 }, DATE, HOURS, [], bookings, BEFORE)).toEqual(ALL_WEDNESDAY);
+    });
+
+    it('lists a booking end on the grid only once', () => {
+      // Booked 10:00–11:00 local; 11:00 is both a grid start and the booking end.
+      const bookings = [booking('08:00', '09:00')];
+      expect(calculateAvailableSlots({ durationMin: 60 }, DATE, HOURS, [], bookings, BEFORE)).toEqual(
+        ['09:00', '09:30', '10:00', '10:30', '11:00'].map(utc),
+      );
+    });
+
+    it('keeps the starts in ascending order when a booking end falls between grid starts', () => {
+      // Booked 11:00–11:40 local; 11:40 sits between 10:30 and 12:00.
+      const bookings = [booking('09:00', '09:40')];
+      const slots = calculateAvailableSlots({ durationMin: 30 }, DATE, HOURS, [], bookings, BEFORE);
+      expect(slots).toEqual(['08:00', '08:30', '09:40', '10:00', '10:30', '11:00', '11:30'].map(utc));
+      expect([...slots].sort()).toEqual(slots);
+    });
+
+    it('drops a booking end that is not after now', () => {
+      // Booked 10:30–11:10 local; now is 11:10 local.
+      const bookings = [booking('08:30', '09:10')];
+      const now = new Date(utc('09:10'));
+      expect(calculateAvailableSlots({ durationMin: 60 }, DATE, HOURS, [], bookings, now)).toEqual(
+        ['09:30', '10:00', '10:30', '11:00'].map(utc),
+      );
+    });
   });
 });

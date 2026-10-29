@@ -311,8 +311,9 @@ const invalidServiceBodies = {
   'a blank name': { ...serviceBody, name: '   ' },
   'a name over 80 characters': { ...serviceBody, name: 'а'.repeat(81) },
   'a description over 300 characters': { ...serviceBody, description: 'а'.repeat(301) },
-  'a duration that is not a multiple of 15': { ...serviceBody, durationMin: 50 },
-  'a duration under 15': { ...serviceBody, durationMin: 0 },
+  'a duration that is not a multiple of 5': { ...serviceBody, durationMin: 42 },
+  'a duration of 0': { ...serviceBody, durationMin: 0 },
+  'a duration under 15 (10, a multiple of 5)': { ...serviceBody, durationMin: 10 },
   'a duration over 480': { ...serviceBody, durationMin: 495 },
   'a negative price': { ...serviceBody, priceCents: -1 },
   'a price over 100000': { ...serviceBody, priceCents: 100001 },
@@ -348,6 +349,18 @@ describe('POST /api/me/services', () => {
     expect(empty.body.service.description).toBeNull();
     expect(missing.status).toBe(201);
     expect(missing.body.service.description).toBeNull();
+  });
+
+  it('accepts a duration of 40 minutes (a multiple of 5) and rejects 42 with 400 VALIDATION_ERROR', async () => {
+    const manicurist = await createManicurist();
+
+    const forty = await post(manicurist, { ...serviceBody, durationMin: 40 });
+    const fortyTwo = await post(manicurist, { ...serviceBody, durationMin: 42 });
+
+    expect(forty.status).toBe(201);
+    expect(forty.body.service.durationMin).toBe(40);
+    expect(fortyTwo.status).toBe(400);
+    expect(fortyTwo.body.error.code).toBe('VALIDATION_ERROR');
   });
 
   it('accepts the edge values: 15 and 480 minutes, 0 and 100000 cents', async () => {
@@ -409,7 +422,7 @@ describe('PUT /api/me/services/:id', () => {
   it('returns 400 VALIDATION_ERROR for an invalid body', async () => {
     const manicurist = await createManicurist();
 
-    const res = await put(manicurist, manicurist.profile!.services[0].id, invalidServiceBodies['a duration that is not a multiple of 15']);
+    const res = await put(manicurist, manicurist.profile!.services[0].id, invalidServiceBodies['a duration that is not a multiple of 5']);
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');

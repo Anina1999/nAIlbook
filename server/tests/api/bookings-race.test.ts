@@ -3,7 +3,7 @@ import { AppError } from '../../src/lib/errors.js';
 import { createBooking } from '../../src/modules/bookings/service.js';
 import { nextWeekday, slotAt } from '../helpers/dates.js';
 import { prisma, resetDb } from '../helpers/db.js';
-import { createClient, createManicurist } from '../helpers/factories.js';
+import { createBooking as insertBooking, createClient, createManicurist, createService } from '../helpers/factories.js';
 
 beforeEach(() => resetDb());
 afterAll(() => prisma.$disconnect());
@@ -27,5 +27,26 @@ describe('createBooking', () => {
     const codes = results.flatMap((r) => (r.status === 'rejected' ? [(r.reason as AppError).code] : []));
     expect(codes).toEqual(Array(5).fill('SLOT_TAKEN'));
     expect(await prisma.booking.count()).toBe(1);
+  });
+
+  it('books the start at the end of a 40-minute booking only once when several clients race for it', async () => {
+    const manicurist = await createManicurist();
+    const short = await createService(manicurist, { name: 'Сваляне', durationMin: 40 });
+    const date = nextWeekday(1);
+    // Booked 10:30–11:10, so 11:10 is a start off the grid.
+    await insertBooking(await createClient(), manicurist, { startAt: new Date(slotAt(date, '10:30')), service: short });
+    const clients = await Promise.all([1, 2, 3, 4, 5, 6].map(() => createClient()));
+    const input = {
+      manicuristId: manicurist.id,
+      serviceId: manicurist.profile!.services[0].id,
+      startAt: new Date(slotAt(date, '11:10')),
+    };
+
+    const results = await Promise.allSettled(clients.map((c) => createBooking(c.id, input, new Date())));
+
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    const codes = results.flatMap((r) => (r.status === 'rejected' ? [(r.reason as AppError).code] : []));
+    expect(codes).toEqual(Array(5).fill('SLOT_TAKEN'));
+    expect(await prisma.booking.count()).toBe(2);
   });
 });

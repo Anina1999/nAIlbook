@@ -79,18 +79,24 @@ type BookingOverrides = {
   status?: BookingStatus;
   cancelledBy?: CancelledBy;
   cancelReason?: string;
+  // Another service of the same manicurist, such as one from createService.
+  service?: { id: number; name: string; durationMin: number; priceCents: number };
 };
 
-// A booking of the manicurist's first service, inserted directly without
-// validation, so tests can set up past and cancelled bookings. The default
-// start is next Monday at 10:00 Sofia time.
+// A booking of the manicurist's first service (or overrides.service), inserted
+// directly without validation, so tests can set up past and cancelled bookings.
+// endAt is the start plus the service duration. The default start is next
+// Monday at 10:00 Sofia time.
 export function createBooking(
   client: { id: number },
   manicurist: Manicurist,
   overrides: BookingOverrides = {},
 ) {
-  const service = manicurist.profile!.services[0];
-  const { startAt = new Date(slotAt(nextWeekday(1), '10:00')), ...rest } = overrides;
+  const {
+    service = manicurist.profile!.services[0],
+    startAt = new Date(slotAt(nextWeekday(1), '10:00')),
+    ...rest
+  } = overrides;
   return prisma.booking.create({
     data: {
       clientId: client.id,

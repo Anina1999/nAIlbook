@@ -1,6 +1,8 @@
-// Demo data: 5 manicurists in 3 cities, one client with a past and an upcoming
-// booking, and one future day off. Dates are relative to today in Sofia, so the
-// demo stays valid whenever it runs. Safe to run again: it clears all rows first.
+// Demo data: 5 manicurists in 3 cities, one client with a past booking, an
+// upcoming one and a packed day of five back-to-back bookings with Maria (one
+// ends at 12:10, so 12:10 is offered as a start), and one future day off. Dates
+// are relative to today in Sofia, so the demo stays valid whenever it runs.
+// Safe to run again: it clears all rows first.
 import bcrypt from 'bcrypt';
 import { prisma } from '../src/lib/prisma.js';
 import { addDays, sofiaToUtc, todayInSofia, weekdayOf } from '../src/lib/time.js';
@@ -62,6 +64,10 @@ const manicurists: ManicuristSeed[] = [
       { name: 'Класически маникюр', durationMin: 60, priceCents: 2500 },
       { name: 'Гел лак', description: 'Включва оформяне и грижа за кожичките.', durationMin: 90, priceCents: 3500 },
       { name: 'Премахване на гел', durationMin: 30, priceCents: 1000 },
+      { name: 'Педикюр', durationMin: 90, priceCents: 3500 },
+      { name: 'Парафинова терапия за ръце', durationMin: 40, priceCents: 2000 },
+      { name: 'Ноктопластика', durationMin: 180, priceCents: 6000 },
+      { name: 'Смяна на дизайн / счупен нокът', durationMin: 30, priceCents: 1000 },
     ],
   },
   {
@@ -185,18 +191,40 @@ async function main() {
   const dayOff = firstDateOn(addDays(today, 7), [3]);
   await prisma.dayOff.create({ data: { manicuristId: maria.user.id, date: dayOff } });
 
+  const service = (name: string) => {
+    const found = maria.services.find((s) => s.name === name);
+    if (!found) throw new Error(`Maria has no service ${name}`);
+    return found;
+  };
+
   // Past booking: Maria's last working day before today, 10:00, classic manicure.
-  // Upcoming booking: her first working day at least 2 days ahead, 11:00, gel polish.
-  // Both are on the 30-minute grid, inside her hours and not on the day off.
+  // Upcoming booking: her first working day at least 2 days ahead, 11:00, gel
+  // polish. It stays the client's first upcoming booking with Maria.
   const pastDate = lastDateOn(addDays(today, -1), maria.seed.weekdays);
   const upcomingDate = firstDateOn(addDays(today, 2), maria.seed.weekdays);
+
+  // Packed day: her first working day after the upcoming booking that is not
+  // the day off. Each booking starts where the one before it ends, so the
+  // 11:30 one (40 minutes) ends off the 30-minute grid, at 12:10.
+  let packedDate = firstDateOn(addDays(upcomingDate, 1), maria.seed.weekdays);
+  if (packedDate === dayOff) packedDate = firstDateOn(addDays(packedDate, 1), maria.seed.weekdays);
+  if (packedDate === dayOff || packedDate === upcomingDate) {
+    throw new Error('The packed day falls on the day off or on the upcoming booking date');
+  }
+
   const bookings = [
-    { date: pastDate, startMin: h(10), service: maria.services[0] },
-    { date: upcomingDate, startMin: h(11), service: maria.services[1] },
+    { date: pastDate, startMin: h(10), service: service('Класически маникюр') },
+    { date: upcomingDate, startMin: h(11), service: service('Гел лак') },
+    { date: packedDate, startMin: h(9), service: service('Класически маникюр') },
+    { date: packedDate, startMin: h(10), service: service('Педикюр') },
+    { date: packedDate, startMin: h(11, 30), service: service('Парафинова терапия за ръце') },
+    { date: packedDate, startMin: h(14), service: service('Ноктопластика') },
+    { date: packedDate, startMin: h(17), service: service('Смяна на дизайн / счупен нокът') },
   ];
 
   for (const b of bookings) {
     if (b.date === dayOff) throw new Error('Seed booking falls on the day off');
+    const startAt = sofiaToUtc(b.date, b.startMin);
     await prisma.booking.create({
       data: {
         clientId: clientUser.id,
@@ -204,15 +232,16 @@ async function main() {
         serviceId: b.service.id,
         serviceName: b.service.name,
         priceCents: b.service.priceCents,
-        startAt: sofiaToUtc(b.date, b.startMin),
-        endAt: sofiaToUtc(b.date, b.startMin + b.service.durationMin),
+        startAt,
+        // As the API computes it: the UTC start plus the duration.
+        endAt: new Date(startAt.getTime() + b.service.durationMin * 60_000),
       },
     });
   }
 
   console.log(
     `Seeded ${created.length} manicurists, 1 client, day off ${dayOff}, ` +
-      `bookings on ${pastDate} (past) and ${upcomingDate} (upcoming).`,
+      `bookings on ${pastDate} (past), ${upcomingDate} (upcoming) and ${packedDate} (packed day, 5 bookings).`,
   );
 }
 

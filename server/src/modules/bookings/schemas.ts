@@ -8,8 +8,9 @@ const id = z.coerce.number().int().positive();
 
 export const idParams = z.object({ id });
 
+// serviceId is optional: without it the day comes with its busy intervals only.
 export const slotsQuery = z.object({
-  serviceId: z.coerce.number({ error: 'Изберете услуга.' }).int().positive(),
+  serviceId: z.coerce.number({ error: 'Изберете услуга.' }).int().positive().optional(),
   date,
 });
 

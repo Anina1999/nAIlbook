@@ -39,7 +39,7 @@ The seed creates these accounts. All of them use the password `nailbook123`.
 | Manicurist | desislava@example.com | Десислава Стоянова | Пловдив |
 | Manicurist | gabriela@example.com | Габриела Николова | Велико Търново |
 
-The client has a past and an upcoming booking with Мария Петрова, and Мария has a day off on a Wednesday 7–13 days after the seed runs. All names, emails and phone numbers are fake.
+The client has a past and an upcoming booking with Мария Петрова, plus a packed day with her: five bookings back to back, so a start right after a 40-minute booking (12:10) is offered. Мария has 7 services and a day off on a Wednesday 7–13 days after the seed runs. All names, emails and phone numbers are fake.
 
 ## Reset the demo data locally
 

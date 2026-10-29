@@ -135,21 +135,107 @@ describe('validateBooking', () => {
     expect(validateBooking(input({ daysOff: [DATE], now }))).toMatchObject({ ok: false, code: 'DAY_OFF' });
   });
 
-  it('agrees with calculateAvailableSlots on every grid start of the day', () => {
-    // Booked 11:00–12:00 local. Grid starts 10:00–13:00 local.
-    const bookings = [booking('09:00', '10:00')];
+  it('agrees with calculateAvailableSlots on every grid start and every booking end of the day', () => {
+    // Booked 10:00–10:40 local (40 minutes) and 12:00–13:00 local. Grid starts
+    // 10:00–13:00 local, plus the booking ends 10:40 and 13:00 (on the grid).
+    const bookings = [booking('08:00', '08:40'), booking('10:00', '11:00')];
     const service = { manicuristId: 1, durationMin: 60 };
     const slots = calculateAvailableSlots(service, DATE, HOURS, [], bookings, BEFORE);
-    expect(slots.length).toBeGreaterThan(0);
+    expect(slots).toContain(at('08:40').toISOString());
 
-    for (const time of ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00']) {
-      const startAt = at(time);
+    const grid = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00'].map((time) => at(time).toISOString());
+    const ends = bookings.map((b) => b.endAt.toISOString());
+    for (const iso of new Set([...grid, ...ends])) {
+      const startAt = new Date(iso);
       const result = validateBooking(input({ startAt, bookings }));
-      if (slots.includes(startAt.toISOString())) {
+      if (slots.includes(iso)) {
         expect(result).toMatchObject({ ok: true });
       } else {
         expect(result).toMatchObject({ ok: false, code: 'SLOT_TAKEN' });
       }
     }
+  });
+
+  describe('a start at the end of a booking', () => {
+    it('accepts the end of an active booking off the grid and returns endAt = start + duration', () => {
+      // Booked 10:30–11:10 local (40 minutes); 11:10 + 60 min = 12:10.
+      const bookings = [booking('08:30', '09:10')];
+      expect(validateBooking(input({ startAt: at('09:10'), bookings }))).toEqual({ ok: true, endAt: at('10:10') });
+    });
+
+    it('returns SLOT_INVALID for an off-grid start that is the end of a cancelled booking', () => {
+      const bookings = [booking('08:30', '09:10', 'CANCELLED')];
+      expect(validateBooking(input({ startAt: at('09:10'), bookings }))).toMatchObject({
+        ok: false,
+        code: 'SLOT_INVALID',
+      });
+    });
+
+    it('returns SLOT_INVALID for an off-grid start that is not the end of any booking', () => {
+      // Booked 10:30–11:10 local; 11:20 is neither on the grid nor a booking end.
+      const bookings = [booking('08:30', '09:10')];
+      expect(validateBooking(input({ startAt: at('09:20'), bookings }))).toMatchObject({
+        ok: false,
+        code: 'SLOT_INVALID',
+      });
+    });
+
+    it('returns SLOT_INVALID for a booking end when the service would end after the working hours', () => {
+      // Booked 12:30–13:10 local; 13:10 + 60 min would end at 14:10.
+      const bookings = [booking('10:30', '11:10')];
+      expect(validateBooking(input({ startAt: at('11:10'), bookings }))).toMatchObject({
+        ok: false,
+        code: 'SLOT_INVALID',
+      });
+    });
+
+    it('returns SLOT_TAKEN for a booking end when the service runs into the next booking', () => {
+      // Booked 10:30–11:10 and 12:00–13:00 local; 11:10 + 60 min would end at 12:10.
+      const bookings = [booking('08:30', '09:10'), booking('10:00', '11:00')];
+      expect(validateBooking(input({ startAt: at('09:10'), bookings }))).toMatchObject({
+        ok: false,
+        code: 'SLOT_TAKEN',
+      });
+    });
+
+    describe('on daylight-saving switch days', () => {
+      const sundayHours: WorkingHoursInput[] = [{ weekday: 0, startMin: h(9), endMin: h(11) }];
+      const now = new Date('2026-01-01T00:00:00.000Z');
+
+      it('accepts the end of a booking at 09:40 local on 2026-03-29 (UTC+3)', () => {
+        const bookings: BookingInput[] = [
+          { startAt: new Date('2026-03-29T06:00:00.000Z'), endAt: new Date('2026-03-29T06:40:00.000Z'), status: 'BOOKED' },
+        ];
+        const startAt = new Date('2026-03-29T06:40:00.000Z');
+        expect(validateBooking(input({ startAt, workingHours: sundayHours, bookings, now }))).toEqual({
+          ok: true,
+          endAt: new Date('2026-03-29T07:40:00.000Z'),
+        });
+      });
+
+      it('accepts the end of a booking at 09:40 local on 2026-10-25 (UTC+2)', () => {
+        const bookings: BookingInput[] = [
+          { startAt: new Date('2026-10-25T07:00:00.000Z'), endAt: new Date('2026-10-25T07:40:00.000Z'), status: 'BOOKED' },
+        ];
+        const startAt = new Date('2026-10-25T07:40:00.000Z');
+        expect(validateBooking(input({ startAt, workingHours: sundayHours, bookings, now }))).toEqual({
+          ok: true,
+          endAt: new Date('2026-10-25T08:40:00.000Z'),
+        });
+      });
+
+      it('accepts a booking end in the second occurrence of the repeated hour on 2026-10-25', () => {
+        // 02:00–06:00 local. Booked from the first 03:30 (00:30Z) to the second 03:40 (01:40Z).
+        const hours: WorkingHoursInput[] = [{ weekday: 0, startMin: h(2), endMin: h(6) }];
+        const bookings: BookingInput[] = [
+          { startAt: new Date('2026-10-25T00:30:00.000Z'), endAt: new Date('2026-10-25T01:40:00.000Z'), status: 'BOOKED' },
+        ];
+        const startAt = new Date('2026-10-25T01:40:00.000Z');
+        expect(validateBooking(input({ startAt, workingHours: hours, bookings, now }))).toEqual({
+          ok: true,
+          endAt: new Date('2026-10-25T02:40:00.000Z'),
+        });
+      });
+    });
   });
 });

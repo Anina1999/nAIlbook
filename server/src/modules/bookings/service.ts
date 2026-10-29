@@ -6,6 +6,7 @@ import { AppError } from '../../lib/errors.js';
 import { prisma } from '../../lib/prisma.js';
 import { sofiaDayRange, utcToSofia } from '../../lib/time.js';
 import { canCancel, validateBooking } from '../../scheduling/booking.js';
+import { lastBookableDate } from '../../scheduling/intervals.js';
 import { calculateAvailableSlots } from '../../scheduling/slots.js';
 import { bookingSelect, toBooking } from './booking-shape.js';
 import type { CreateBookingInput } from './schemas.js';
@@ -20,6 +21,7 @@ async function loadDay(db: Prisma.TransactionClient, manicuristId: number, date:
     db.booking.findMany({
       where: { manicuristId, status: 'BOOKED', startAt: { gte: from, lt: to } },
       select: { startAt: true, endAt: true, status: true },
+      orderBy: { startAt: 'asc' },
     }),
   ]);
   return { workingHours, daysOff: dayOff ? [dayOff.date] : [], bookings };
@@ -29,17 +31,42 @@ function serviceNotFound() {
   return new AppError('NOT_FOUND', 'Услугата не е намерена.');
 }
 
-export async function getSlots(manicuristId: number, serviceId: number, date: string, now: Date) {
+// Finds the service to calculate slots for. Without a serviceId only the
+// manicurist has to exist; a user who is not one is as missing as an unknown id.
+async function findSlotsService(manicuristId: number, serviceId: number | undefined) {
+  if (serviceId === undefined) {
+    const profile = await prisma.manicuristProfile.findUnique({
+      where: { userId: manicuristId },
+      select: { userId: true },
+    });
+    if (!profile) throw new AppError('NOT_FOUND', 'Маникюристът не е намерен.');
+    return null;
+  }
+
   const service = await prisma.service.findUnique({
     where: { id: serviceId, deletedAt: null },
     select: { durationMin: true, manicuristId: true },
   });
   // Also covers a removed service and an unknown manicurist: no service belongs to them.
   if (!service || service.manicuristId !== manicuristId) throw serviceNotFound();
+  return service;
+}
+
+// The free starts for the service (none without one) and the busy intervals of
+// the day: the active bookings by start time, with only startAt and endAt, so
+// the public answer names no client and no service. A day off and a date after
+// the 12-month limit have nothing to show.
+export async function getSlots(manicuristId: number, serviceId: number | undefined, date: string, now: Date) {
+  const service = await findSlotsService(manicuristId, serviceId);
 
   const { workingHours, daysOff, bookings } = await loadDay(prisma, manicuristId, date);
-  const slots = calculateAvailableSlots(service, date, workingHours, daysOff, bookings, now);
-  return { date, dayOff: daysOff.length > 0, slots };
+  const dayOff = daysOff.length > 0;
+  const slots = service ? calculateAvailableSlots(service, date, workingHours, daysOff, bookings, now) : [];
+  const closed = dayOff || date > lastBookableDate(now);
+  const busy = closed
+    ? []
+    : bookings.map((b) => ({ startAt: b.startAt.toISOString(), endAt: b.endAt.toISOString() }));
+  return { date, dayOff, slots, busy };
 }
 
 // The check and the insert run in one transaction. The adapter runs one

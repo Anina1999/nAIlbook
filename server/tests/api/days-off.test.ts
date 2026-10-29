@@ -273,7 +273,7 @@ describe('POST /api/me/days-off', () => {
       .get(`/api/manicurists/${manicurist.id}/slots`)
       .query({ serviceId: manicurist.profile!.services[0].id, date });
 
-    expect(res.body).toEqual({ date, dayOff: true, slots: [] });
+    expect(res.body).toEqual({ date, dayOff: true, slots: [], busy: [] });
   });
 
   it('marks a removed date again on the same row and returns 201 with the same id', async () => {
@@ -633,7 +633,7 @@ describe('the 12-month limit for bookings and slots', () => {
     const res = await slots(manicurist.id, { serviceId: manicurist.profile!.services[0].id, date });
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ date, dayOff: false, slots: [] });
+    expect(res.body).toEqual({ date, dayOff: false, slots: [], busy: [] });
   });
 
   it('books and lists slots on the last date, exactly 12 months from today', async () => {
@@ -658,7 +658,7 @@ describe('the 12-month limit for bookings and slots', () => {
 
     const list = await slots(manicurist.id, { serviceId, date });
     expect(list.status).toBe(200);
-    expect(list.body).toEqual({ date, dayOff: false, slots: [] });
+    expect(list.body).toEqual({ date, dayOff: false, slots: [], busy: [] });
 
     const res = await book(client, { manicuristId: manicurist.id, serviceId, startAt: slotAt(date, '10:00') });
     expect(res.status).toBe(400);

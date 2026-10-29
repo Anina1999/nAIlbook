@@ -20,7 +20,10 @@
     { "key": "bookedDate", "value": "" },
     { "key": "dayOffId", "value": "" },
     { "key": "otherManicuristToken", "value": "" },
-    { "key": "catalogServiceId", "value": "" }
+    { "key": "catalogServiceId", "value": "" },
+    { "key": "packedDate", "value": "" },
+    { "key": "packedStartAt", "value": "" },
+    { "key": "packedBookingId", "value": "" }
   ],
   "item": [
     {
@@ -528,7 +531,7 @@
           }
         },
         {
-          "name": "Create a service of 50 minutes (400)",
+          "name": "Create a service of 42 minutes (400)",
           "event": [
             {
               "listen": "test",
@@ -549,7 +552,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Тестова услуга\",\n  \"durationMin\": 50,\n  \"priceCents\": 2000\n}"
+              "raw": "{\n  \"name\": \"Тестова услуга\",\n  \"durationMin\": 42,\n  \"priceCents\": 2000\n}"
             },
             "url": "{{baseUrl}}/api/me/services"
           }
@@ -944,7 +947,7 @@
     },
     {
       "name": "Bookings",
-      "description": "Runs against a fresh seed. It finds the demo client's upcoming booking with the demo manicurist (Maria), books the first free slot on that day and cancels it again, so the folder can be run any number of times.",
+      "description": "Runs against a fresh seed. It finds the demo client's upcoming booking with the demo manicurist (Maria), books the first free slot on that day and cancels it again. Then it opens Maria's packed day, where the seed booking «Парафинова терапия за ръце» ends at 12:10, off the 30-minute grid: it checks that 12:10 is offered and that the busy intervals carry only startAt and endAt, books 12:10 right after that booking and cancels it again. So the folder can be run any number of times.",
       "item": [
         {
           "name": "Login as the demo client (200)",
@@ -1015,6 +1018,14 @@
                   "  pm.collectionVariables.set('seedStartAt', seeded.startAt);",
                   "  // The seed books it at 11:00 Sofia time, so its UTC date is also the Sofia date.",
                   "  pm.collectionVariables.set('bookingDate', seeded.startAt.slice(0, 10));",
+                  "}",
+                  "// The packed day: the seed booking «Парафинова терапия за ръце» ends at 12:10 Sofia time, off the grid.",
+                  "const packed = upcoming.find((b) => b.status === 'BOOKED' && b.serviceName === 'Парафинова терапия за ръце' && b.manicurist.id === Number(pm.collectionVariables.get('manicuristId')));",
+                  "pm.test('has the packed-day booking that ends off the grid', () => pm.expect(packed).to.be.an('object'));",
+                  "if (packed) {",
+                  "  // It ends at 12:10 Sofia time, so its UTC date is also the Sofia date.",
+                  "  pm.collectionVariables.set('packedDate', packed.endAt.slice(0, 10));",
+                  "  pm.collectionVariables.set('packedStartAt', packed.endAt);",
                   "}"
                 ]
               }
@@ -1055,8 +1066,9 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('200 OK', () => pm.response.to.have.status(200));",
-                  "const { dayOff, slots } = pm.response.json();",
+                  "const { dayOff, slots, busy } = pm.response.json();",
                   "pm.test('is a working day with free slots', () => { pm.expect(dayOff).to.eql(false); pm.expect(slots.length).to.be.above(0); });",
+                  "pm.test('lists the busy intervals with only startAt and endAt', () => { pm.expect(busy).to.be.an('array').that.is.not.empty; busy.forEach((b) => pm.expect(Object.keys(b).sort()).to.eql(['endAt', 'startAt'])); });",
                   "pm.test('the booked start is not offered', () => pm.expect(slots).to.not.include(pm.collectionVariables.get('seedStartAt')));",
                   "if (slots && slots.length > 0) {",
                   "  pm.collectionVariables.set('slotStartAt', slots[0]);",
@@ -1313,6 +1325,84 @@
             ],
             "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Няма да успея да дойда.\"\n}" },
             "url": "{{baseUrl}}/api/bookings/{{newBookingId}}/cancel"
+          }
+        },
+        {
+          "name": "Free slots on the packed day (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const { dayOff, slots, busy } = pm.response.json();",
+                  "pm.test('is a working day', () => pm.expect(dayOff).to.eql(false));",
+                  "pm.test('offers the end of the booking before as a start, off the grid', () => pm.expect(slots).to.include(pm.collectionVariables.get('packedStartAt')));",
+                  "pm.test('lists the busy intervals with no names, only startAt and endAt', () => { pm.expect(busy).to.be.an('array').that.is.not.empty; busy.forEach((b) => pm.expect(Object.keys(b).sort()).to.eql(['endAt', 'startAt'])); });",
+                  "pm.test('one busy interval ends at that start', () => pm.expect(busy.map((b) => b.endAt)).to.include(pm.collectionVariables.get('packedStartAt')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/manicurists/{{manicuristId}}/slots?serviceId={{serviceId}}&date={{packedDate}}"
+          }
+        },
+        {
+          "name": "Book right after an active booking (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const { booking } = pm.response.json();",
+                  "pm.test('is booked at the end of the booking before', () => { pm.expect(booking.status).to.eql('BOOKED'); pm.expect(booking.startAt).to.eql(pm.collectionVariables.get('packedStartAt')); });",
+                  "pm.test('ends after the service duration', () => pm.expect(Date.parse(booking.endAt)).to.be.above(Date.parse(booking.startAt)));",
+                  "if (booking) pm.collectionVariables.set('packedBookingId', booking.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"manicuristId\": {{manicuristId}},\n  \"serviceId\": {{serviceId}},\n  \"startAt\": \"{{packedStartAt}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/bookings"
+          }
+        },
+        {
+          "name": "Cancel the booking right after an active booking (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('is cancelled by the client', () => { const { booking } = pm.response.json(); pm.expect(booking.status).to.eql('CANCELLED'); pm.expect(booking.cancelledBy).to.eql('CLIENT'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{clientToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Няма да успея да дойда.\"\n}" },
+            "url": "{{baseUrl}}/api/bookings/{{packedBookingId}}/cancel"
           }
         }
       ]

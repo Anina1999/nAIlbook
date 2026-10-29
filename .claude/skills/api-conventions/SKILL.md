@@ -31,7 +31,7 @@ The modules are `auth`, `catalog` and `bookings`. Booking and slot rules live in
 | `FORBIDDEN` | 403 | The role is wrong, or the user does not own the row. |
 | `NOT_FOUND` | 404 | The resource does not exist. |
 | `EMAIL_TAKEN` | 409 | The email is already registered. |
-| `SLOT_INVALID` | 400 | The slot is off the grid, outside working hours, in the past or too far ahead (after the 12-month limit). A day off on a past date or after the limit gets it too. |
+| `SLOT_INVALID` | 400 | The slot is outside working hours, neither on the grid nor exactly the end of an active booking, in the past or too far ahead (after the 12-month limit). A day off on a past date or after the limit gets it too. |
 | `SLOT_TAKEN` | 409 | The slot overlaps an active booking. |
 | `DAY_OFF` | 409 | Someone tried to book a day off. |
 | `DAY_HAS_BOOKINGS` | 409 | A manicurist tried to mark a day off that has active bookings. `details.bookings` lists them as `booking` objects (the shape below), by start time. |
@@ -63,7 +63,7 @@ Add a new code here before you use it.
 | `GET /api/manicurists?city=&service=` | anyone | Search |
 | `GET /api/manicurists/:id` | anyone | Profile, services, working hours |
 | `GET /api/manicurists/:id/days-off?from=&to=` | anyone | Dates to disable in the calendar |
-| `GET /api/manicurists/:id/slots?serviceId=&date=` | anyone | Free slots for a day |
+| `GET /api/manicurists/:id/slots?serviceId=&date=` | anyone | Free slots for a day (`serviceId` optional) and its busy intervals |
 | `PUT /api/me/profile` | manicurist | Update own profile |
 | `POST /api/me/services`, `PUT/DELETE /api/me/services/:id` | manicurist | Manage own services |
 | `PUT /api/me/working-hours` | manicurist | Replace weekly hours |
@@ -89,7 +89,7 @@ This list is the contract the client codes against. Write the shape of a new end
 | `POST /api/auth/logout` | `204`, no body |
 | `GET /api/manicurists?city=&service=` | `200 { manicurists: [{ id, name, city, imageUrl, services: [{ id, name, durationMin, priceCents }] }] }`. Both parameters are optional; an empty or blank one is no filter. Only manicurists with at least one active service are returned, so a new manicurist appears after adding the first service and disappears again when every service is removed. `city` matches part of the city and `service` part of an active service name, ignoring case, filtered in JS with `toLocaleLowerCase('bg')` and `includes` (SQLite ignores case only for ASCII). Manicurists and their services are sorted by name (`localeCompare` with `'bg'`). A repeated parameter is `400 VALIDATION_ERROR`. |
 | `GET /api/manicurists/:id` | `200 { manicurist }`. `404 NOT_FOUND` for an unknown id or a user who is not a manicurist. |
-| `GET /api/manicurists/:id/slots?serviceId=&date=` | `200 { date, dayOff, slots }`. `slots` are UTC ISO start times. `404 NOT_FOUND` when the service is removed or does not belong to that manicurist. A date after the 12-month limit is `200 { date, dayOff: false, slots: [] }`. |
+| `GET /api/manicurists/:id/slots?serviceId=&date=` | `200 { date, dayOff, slots, busy }`. `slots` are UTC ISO start times: the 30-minute grid plus the exact ends of active bookings (see `scheduling-engine`). `busy` is the active `BOOKED` bookings on that Sofia date by `startAt`, as `[{ startAt, endAt }]` UTC ISO strings with exactly those two keys (no id, names or service); cancelled bookings are not in it. `date` is required (else `400 VALIDATION_ERROR`); `serviceId` is optional: without it `slots` is `[]`, and an unknown id or a user who is not a manicurist is `404 NOT_FOUND`. `404 NOT_FOUND` when the service is unknown, removed or does not belong to that manicurist. A day off is `200 { date, dayOff: true, slots: [], busy: [] }`; a date after the 12-month limit is `200 { date, dayOff: false, slots: [], busy: [] }`. |
 | `PUT /api/me/profile`, body `{ name, phone, city, address, bio }` | `200 { manicurist }`. The fields follow the registration rules (`contactFields` and `profileFields` in `modules/auth/schemas.ts`): name, city and address trimmed and required, `phone` and `bio` trimmed and optional (default `""`). A body without `phone` saves `""`. Name and phone are saved in `User`, the rest in `ManicuristProfile`, in one transaction. |
 | `POST /api/me/services`, body `{ name, description, durationMin, priceCents }` | `201 { service }` |
 | `PUT /api/me/services/:id`, the same body (every field again) | `200 { service }`. `403 FORBIDDEN` for another manicurist's service, `404 NOT_FOUND` for a removed or unknown one. Bookings keep their own `serviceName` and `priceCents`. |
@@ -118,7 +118,7 @@ Field rules for the manicurist's editors:
 |-------|------|
 | `service.name` | trimmed, 1–80 characters |
 | `service.description` | trimmed, up to 300 characters, optional; empty, blank, `null` or missing is saved as `null` |
-| `service.durationMin` | whole minutes, a multiple of 15, from 15 to 480 |
+| `service.durationMin` | whole minutes, a multiple of 5, from 15 to 480 |
 | `service.priceCents` | whole cents, from 0 to 100000 (1000 €) |
 | `workingHours[].weekday` | 0–6 (0 = Sunday), each at most once |
 | `workingHours[].startMin`, `endMin` | multiples of 30, `0 <= startMin < endMin <= 1440` |

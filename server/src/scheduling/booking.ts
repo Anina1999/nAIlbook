@@ -3,7 +3,7 @@
 
 import type { ErrorCode } from '../lib/errors.js';
 import { sofiaToUtc, utcToSofia, weekdayOf } from '../lib/time.js';
-import { GRID_MIN, lastBookableDate, overlapsBooking } from './intervals.js';
+import { GRID_MIN, isBookingEnd, lastBookableDate, overlapsBooking } from './intervals.js';
 import type {
   CancellableBooking,
   CancelledBy,
@@ -30,13 +30,18 @@ export function validateBooking(input: ValidateBookingInput): CheckResult<{ endA
     return fail('DAY_OFF', 'Маникюристът не работи в този ден. Изберете друга дата.');
   }
 
-  // The round trip rejects seconds and the second occurrence of a repeated
-  // local hour, which calculateAvailableSlots never offers.
-  const onGrid = minutes % GRID_MIN === 0 && sofiaToUtc(date, minutes).getTime() === startAt.getTime();
   const hours = workingHours.find((w) => w.weekday === weekdayOf(date));
   const fits = hours && minutes >= hours.startMin && minutes + service.durationMin <= hours.endMin;
-  if (!onGrid || !fits) {
+  if (!fits) {
     return fail('SLOT_INVALID', 'Този час е извън работното време. Изберете свободен час.');
+  }
+
+  // The round trip rejects seconds and the second occurrence of a repeated
+  // local hour on the grid. The exact end of an active booking is a valid start
+  // too, as calculateAvailableSlots offers it, even in a repeated hour.
+  const onGrid = minutes % GRID_MIN === 0 && sofiaToUtc(date, minutes).getTime() === startAt.getTime();
+  if (!onGrid && !isBookingEnd(startAt, date, bookings)) {
+    return fail('SLOT_INVALID', 'Този час не е свободен. Изберете друг свободен час.');
   }
 
   if (startAt <= now) {

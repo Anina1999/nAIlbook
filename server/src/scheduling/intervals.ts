@@ -1,4 +1,4 @@
-import { addMonths, todayInSofia } from '../lib/time.js';
+import { addMonths, todayInSofia, utcToSofia } from '../lib/time.js';
 import type { BookingInput } from './types.js';
 
 // Bookings start on :00 and :30, Sofia time.
@@ -17,4 +17,16 @@ export function lastBookableDate(now: Date): string {
 // a.start < b.end && b.start < a.end, so back-to-back bookings do not.
 export function overlapsBooking(startAt: Date, endAt: Date, bookings: BookingInput[]): boolean {
   return bookings.some((b) => b.status === 'BOOKED' && startAt < b.endAt && b.startAt < endAt);
+}
+
+// The ends of the BOOKED bookings that fall on this Sofia date, as UTC
+// instants. Each one is a start besides the grid, so a day can be booked
+// without gaps. The instant itself is used, never rebuilt from its local time.
+export function bookingEnds(date: string, bookings: BookingInput[]): Date[] {
+  return bookings.filter((b) => b.status === 'BOOKED' && utcToSofia(b.endAt).date === date).map((b) => b.endAt);
+}
+
+// True when startAt is exactly the end of a BOOKED booking on this Sofia date.
+export function isBookingEnd(startAt: Date, date: string, bookings: BookingInput[]): boolean {
+  return bookingEnds(date, bookings).some((end) => end.getTime() === startAt.getTime());
 }

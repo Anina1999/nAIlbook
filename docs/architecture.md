@@ -67,7 +67,7 @@ The detailed rules live in project skills under [.claude/skills/](../.claude/ski
   - for everyone: search and the manicurist page with a slot picker;
   - for guests: login and registration;
   - for clients: my bookings;
-  - for every logged-in user: edit profile (email, optional phone, password; a client cannot change their name);
+  - for every logged-in user: edit profile (email, optional phone, password; the name cannot be changed);
   - for manicurists: my schedule, days off, and editors for the profile, services and hours.
 - **Done when:** every flow works by hand on desktop and at phone width.
 

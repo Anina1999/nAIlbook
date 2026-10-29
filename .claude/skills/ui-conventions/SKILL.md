@@ -52,7 +52,7 @@ Components call the wrapper in `client/src/api/`, never a raw `fetch`.
 | `/my-bookings` | client | Upcoming bookings with Cancel, and past bookings |
 | `/schedule` | manicurist | Bookings for the selected day, with Cancel |
 | `/days-off` | manicurist | Add or remove days off. The `DAY_HAS_BOOKINGS` warning lists the conflicting bookings. |
-| `/profile` | logged in | Edit profile, for every role: email, phone (optional) and password. A client cannot change their name. A manicurist also edits name, city, address and bio here. The endpoints are agreed in the step that builds the screen. |
+| `/profile` | logged in | Edit profile, for every role: email, phone (optional) and password. Nobody can change their name: it is shown in a `disabled` field, so the registered person stays the same from start to end. A manicurist also edits city, address and bio here. The endpoints are agreed in the step that builds the screen. |
 | `/services`, `/hours` | manicurist | Editors |
 
 ## UI rules

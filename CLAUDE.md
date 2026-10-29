@@ -28,7 +28,7 @@ If the code has to differ from a skill, stop and ask. When the change is agreed,
 
 | Part | Technologies |
 |------|--------------|
-| Client (`client/`) | React, TypeScript, Vite, React Router, Tailwind |
+| Client (`client/`) | React, TypeScript, Vite, React Router, Tailwind (written with `@apply` in each component's CSS Module, see `ui-design`) |
 | Server (`server/`) | Node.js, Express, TypeScript, Prisma, SQLite |
 | Auth | JWT and bcrypt |
 | Validation | zod |

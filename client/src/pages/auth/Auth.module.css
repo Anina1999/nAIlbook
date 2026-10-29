@@ -1,0 +1,47 @@
+@reference "../../index.css";
+
+.page {
+  @apply flex max-w-xl flex-col gap-6;
+}
+
+.title {
+  @apply text-2xl font-bold;
+}
+
+.form {
+  @apply flex flex-col gap-4;
+}
+
+.fieldset {
+  @apply flex flex-col gap-2;
+}
+
+.legend {
+  @apply mb-1 font-semibold;
+}
+
+.options {
+  @apply flex flex-wrap gap-x-6 gap-y-2;
+}
+
+.option {
+  @apply inline-flex items-center gap-2 min-h-11 cursor-pointer;
+}
+
+.radio {
+  @apply size-5 accent-accent;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+.fieldError {
+  @apply text-sm text-danger;
+}
+
+.actions {
+  @apply flex flex-col items-start gap-2;
+}
+
+.switchLink {
+  @apply inline-flex items-center min-h-11 rounded-lg text-accent hover:text-accent-strong hover:underline;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}

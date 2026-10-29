@@ -1,0 +1,5 @@
+@reference "../../index.css";
+
+.loader {
+  @apply py-8 text-muted;
+}

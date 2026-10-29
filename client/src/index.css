@@ -1,1 +1,24 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Sofia Sans", system-ui, sans-serif;
+
+  --color-surface: #FBF8F9;       /* page background */
+  --color-raised: #FFFFFF;        /* cards, inputs, dialogs */
+  --color-ink: #2B1E2C;           /* main text */
+  --color-muted: #6E5F6C;         /* secondary text */
+  --color-line: #E7DDE2;          /* dividers and card borders, decorative only */
+  --color-field: #8A7A87;         /* borders of inputs, selects, checkboxes, slot chips */
+  --color-accent: #A3195B;        /* primary buttons, selected slot and date, links */
+  --color-accent-strong: #82124A; /* hover and active state of accent */
+  --color-accent-soft: #F6E3EC;   /* current day, selected row, badges */
+  --color-danger: #B42318;        /* errors, destructive actions */
+  --color-danger-soft: #FDECEA;   /* background of error boxes */
+  --color-success: #1F7A4D;       /* confirmations */
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-ink;
+  }
+}

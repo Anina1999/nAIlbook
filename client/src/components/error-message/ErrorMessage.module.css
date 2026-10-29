@@ -1,0 +1,9 @@
+@reference "../../index.css";
+
+.box {
+  @apply bg-danger-soft text-danger rounded-lg p-3;
+}
+
+.list {
+  @apply mt-2 list-disc pl-5;
+}

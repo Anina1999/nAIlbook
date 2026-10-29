@@ -1,0 +1,9 @@
+@reference "../../index.css";
+
+.title {
+  @apply text-3xl font-bold;
+}
+
+.lead {
+  @apply mt-2 text-muted;
+}

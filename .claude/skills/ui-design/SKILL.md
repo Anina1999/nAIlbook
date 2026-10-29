@@ -15,7 +15,7 @@ Spend the boldness in one place: the booking moment, which is the slot picker an
 
 ## Tokens
 
-The tokens are defined once in `client/src/index.css`. The `@theme` block below and the font `<link>` in `client/index.html` are added with the first UI screen of module 4. Until then, the default Tailwind classes in `HomePage` (`text-pink-600`, `text-gray-700`) are scaffold placeholders, not a pattern to copy.
+The tokens are defined once, in the `@theme` block of `client/src/index.css` below. The font is loaded by a `<link>` in `client/index.html`.
 
 ```css
 @import "tailwindcss";
@@ -45,6 +45,26 @@ Checked contrast (WCAG): `ink` on `surface` 15.0, `muted` on `surface` 5.7, `acc
 - Colour never carries meaning alone. A status also has a word: «Отказан», «Предстоящ».
 - A new token is added here first, with its contrast checked.
 
+## Where styles live
+
+Every component and page has its own CSS Module (`ui-conventions`, *Structure*). The Tailwind classes in this skill are written there with `@apply`, not in the JSX.
+
+```css
+/* components/button/Button.module.css */
+@reference "../../index.css";
+
+.primary {
+  @apply bg-accent text-white hover:bg-accent-strong rounded-lg min-h-11 px-5 font-semibold;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+```
+
+- Each module starts with `@reference` to `client/src/index.css` (the path is relative to the module), so `@apply` knows the tokens. `@reference` adds no CSS of its own.
+- The JSX sets only `className={styles.primary}`. No utility classes in JSX. Join several module classes with `[styles.a, cond && styles.b].filter(Boolean).join(' ')`.
+- Class names are camelCase and name the role (`.primary`, `.fieldError`, `.column`), not the look (`.pinkBox`).
+- Plain CSS in a module is only for what `@apply` cannot say, and it still uses the tokens (`var(--color-line)`), never a raw hex.
+- `index.css` holds only the Tailwind import, `@theme` and the base style of `body` (`bg-surface text-ink`).
+
 ## Type
 
 - One family: **Sofia Sans**, weights 400, 600 and 700. It is made by a Bulgarian foundry and draws the Bulgarian Cyrillic letter forms when the page has `<html lang="bg">`, which `index.html` already sets.
@@ -64,7 +84,7 @@ Checked contrast (WCAG): `ink` on `surface` 15.0, `muted` on `surface` 5.7, `acc
 
 ## Layout and spacing
 
-- Mobile-first. The page column is `mx-auto max-w-3xl px-4`. The manicurist editors use `max-w-xl`.
+- Mobile-first. The page column is `mx-auto max-w-3xl px-4`. The manicurist editors and the auth forms (`/login`, `/register`) use `max-w-xl`.
 - Spacing follows Tailwind's 4px scale: `gap-2` inside a group of controls, `gap-4` between form fields, `gap-8` between sections. No arbitrary values such as `mt-[13px]`.
 - Content is left-aligned. Only empty states are centred.
 
@@ -74,10 +94,13 @@ The radius depends on the role, not one radius for everything. Surfaces are sepa
 
 | Element | Look |
 |---------|------|
-| Primary button | `bg-accent text-white hover:bg-accent-strong rounded-lg min-h-11 px-5 font-semibold`. One per screen or form. |
+| Primary button | `bg-accent text-white hover:bg-accent-strong rounded-lg min-h-11 px-5 font-semibold`, with `border border-transparent` so it keeps its size when the disabled border appears. One per screen or form. |
 | Secondary button | `bg-raised text-ink border border-field rounded-lg min-h-11 px-5` |
 | Destructive button | `text-danger border border-danger rounded-lg min-h-11 px-5`; in a confirm dialog `bg-danger text-white` |
-| Input, select | `bg-raised border border-field rounded-lg min-h-11 px-3`. A visible `<label>` above it; a placeholder is never the label. The field error goes below it in `text-sm text-danger`. |
+| Input, select | `bg-raised border border-field rounded-lg min-h-11 px-3`. A visible `<label>` above it in `font-semibold`; a placeholder is never the label. The field error goes below it in `text-sm text-danger`, and the input gets `aria-invalid` (border `danger`). |
+| Radio or checkbox group | a `<fieldset>` with a `<legend>` in `font-semibold`. Each option is a `<label>` row with `min-h-11`; the control is `size-5 accent-accent` with the focus outline. The group's error goes under the fieldset. |
+| Text link | `inline-flex items-center min-h-11 text-accent hover:text-accent-strong hover:underline` with the focus outline. The menu links in the header add `font-semibold`. |
+| App header | a bar with `border-b border-line` on `surface`. Its content sits in the page column (`mx-auto max-w-3xl px-4`) and may wrap at narrow widths: the logo link (`text-lg font-bold text-ink`, not a heading) and the menu. A long user name is cut with `truncate`. |
 | Slot chip | `rounded-full min-h-11 min-w-20 border border-field tabular-nums`. Selected: `bg-accent text-white border-accent`. |
 | Day in the date picker | at least 44×44px. Today: `ring-1 ring-accent`. Selected: `bg-accent text-white`. |
 | Disabled date, slot or button | the `disabled` attribute, `text-muted bg-surface border-line cursor-not-allowed`. Not only `opacity-50`. |
@@ -127,6 +150,7 @@ These are the usual defaults of generated UI, not choices for nAIlbook:
 ## Before you report done
 
 - Only tokens: no raw hex, no arbitrary colours, no default palette classes.
+- Styles are in the component's or page's `.module.css`, with no utility classes in the JSX.
 - Every interactive element is at least 44px tall and has a visible focus.
 - Loading, empty and error states are there.
 - The screen works at 375px without horizontal scroll.

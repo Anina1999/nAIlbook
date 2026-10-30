@@ -7,7 +7,7 @@
   --color-raised: #FFFFFF;        /* cards, inputs, dialogs */
   --color-ink: #2B1E2C;           /* main text */
   --color-muted: #6E5F6C;         /* secondary text */
-  --color-line: #E7DDE2;          /* dividers and card borders, decorative only */
+  --color-line: #E7DDE2;          /* dividers, card borders and the «Заето» fill, decorative only */
   --color-field: #8A7A87;         /* borders of inputs, selects, checkboxes, slot chips */
   --color-accent: #A3195B;        /* primary buttons, selected slot and date, links */
   --color-accent-strong: #82124A; /* hover and active state of accent */

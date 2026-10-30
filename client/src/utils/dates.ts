@@ -16,6 +16,13 @@ const sofiaDateParts = new Intl.DateTimeFormat('en-CA', {
   day: '2-digit',
 });
 
+const sofiaClockParts = new Intl.DateTimeFormat('en-GB', {
+  timeZone: SOFIA_TIME_ZONE,
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
 function pad(value: number): string {
   return String(value).padStart(2, '0');
 }
@@ -57,6 +64,14 @@ export function isIsoDate(value: string): boolean {
 export function sofiaDateOf(instant: Date): string {
   const values = Object.fromEntries(sofiaDateParts.formatToParts(instant).map((part) => [part.type, part.value]));
   return `${values.year}-${values.month}-${values.day}`;
+}
+
+/** Minutes from midnight on the Sofia clock: `2026-11-03T10:10:00.000Z` → `730` (12:10). */
+export function minutesInSofia(iso: string): number {
+  const values = Object.fromEntries(
+    sofiaClockParts.formatToParts(new Date(iso)).map((part) => [part.type, part.value]),
+  );
+  return Number(values.hour) * 60 + Number(values.minute);
 }
 
 /** Today's date in Sofia, e.g. `2026-10-29`. */

@@ -6,9 +6,10 @@
   @apply flex flex-col gap-2 rounded-xl bg-accent-soft p-2 sm:p-4;
 }
 
-/* The week navigation is its own white bar, set apart from the day headers below it. */
+/* The week navigation is its own white bar; only the board's gap-2 and the status line
+   stand between it and the day headers, so the board stays compact. */
 .nav {
-  @apply mb-4 flex items-center justify-between gap-2 rounded-lg bg-raised sm:mb-6;
+  @apply flex items-center justify-between gap-2 rounded-lg bg-raised;
 }
 
 /* ink on white: 15.9. */
@@ -30,7 +31,8 @@
   @apply size-5;
 }
 
-/* One line high even when empty. muted on accent-soft: 4.9. */
+/* «Зареждане…», the empty-week message or «Маникюристът не е добавил услуги.»; one line
+   high even when empty. muted on accent-soft: 4.9. */
 .status {
   @apply min-h-6 text-muted;
 }
@@ -44,8 +46,9 @@
 /* Separate cells with pink gaps between them. Fixed layout: the time column is 44px
    and the days share the rest evenly. */
 .table {
-  /* A 2px column gap below sm keeps six day columns at 44px at 375px. */
-  @apply w-full table-fixed border-separate border-spacing-x-0.5 border-spacing-y-1 sm:border-spacing-2;
+  /* A 2px column gap below sm keeps six day columns at 44px at 375px; rows are 4px
+     apart at every width, so the board stays compact. */
+  @apply w-full table-fixed border-separate border-spacing-x-0.5 border-spacing-y-1 sm:border-spacing-x-2;
 }
 
 /* The empty corner has no tile. */
@@ -106,6 +109,21 @@
   @apply text-muted;
 }
 
+/* A busy interval: one tile over its rows. line is a fill only here; the word carries
+   the meaning. ink on line: 12.0. A narrow column breaks the word rather than spill. */
+.busy {
+  @apply rounded-lg bg-line px-0.5 py-1 text-center align-middle text-ink wrap-break-word;
+}
+
+.busyLabel {
+  @apply block text-sm font-semibold;
+}
+
+/* Below sm the times are only read out, so the name stays «Заето 11:30–12:10». */
+.busyTimes {
+  @apply block text-xs tabular-nums max-sm:sr-only;
+}
+
 /* One tall white tile over all rows. */
 .dayOff {
   @apply rounded-lg bg-raised px-0.5 py-2 text-center align-middle text-sm text-muted;
@@ -116,11 +134,6 @@
   @variant max-sm {
     writing-mode: vertical-rl;
   }
-}
-
-/* muted on accent-soft: 4.9. */
-.empty {
-  @apply py-4 text-center text-muted;
 }
 
 .srOnly {

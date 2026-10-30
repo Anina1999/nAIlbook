@@ -56,11 +56,21 @@ export type Manicurist = {
   workingHours: WorkingHours[];
 };
 
-/** The free start times of one day, as UTC ISO strings. */
+/** A booked interval of a day, as UTC ISO strings, with no names and no service. */
+export type BusyInterval = {
+  startAt: string;
+  endAt: string;
+};
+
+/**
+ * One Sofia day: the free start times of a service as UTC ISO strings (`[]`
+ * without a service) and the busy intervals (`[]` on a day off and after the limit).
+ */
 export type SlotsResponse = {
   date: string;
   dayOff: boolean;
   slots: string[];
+  busy: BusyInterval[];
 };
 
 /** Searches manicurists by part of the city and of a service name. Only non-empty params are sent. */
@@ -80,8 +90,17 @@ export function getManicurist(id: number, signal?: AbortSignal): Promise<{ manic
   return request<{ manicurist: Manicurist }>(`/manicurists/${id}`, { signal });
 }
 
-/** The free slots of a service on a Sofia date (`YYYY-MM-DD`). */
-export function getSlots(id: number, serviceId: number, date: string, signal?: AbortSignal): Promise<SlotsResponse> {
-  const params = new URLSearchParams({ serviceId: String(serviceId), date });
+/**
+ * The free slots of a service and the busy intervals on a Sofia date (`YYYY-MM-DD`).
+ * `serviceId` is sent only when a service is chosen; without it `slots` is `[]`.
+ */
+export function getSlots(
+  id: number,
+  serviceId: number | null,
+  date: string,
+  signal?: AbortSignal,
+): Promise<SlotsResponse> {
+  const params = new URLSearchParams({ date });
+  if (serviceId !== null) params.set('serviceId', String(serviceId));
   return request<SlotsResponse>(`/manicurists/${id}/slots?${params}`, { signal });
 }

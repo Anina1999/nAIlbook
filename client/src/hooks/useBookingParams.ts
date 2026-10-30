@@ -3,7 +3,10 @@ import type { Manicurist } from '../api/manicurists';
 import { addDays, isIsoDate, startOfWeek, weekDates, weekdayOf } from '../utils/dates';
 
 export type BookingParams = {
-  /** The service from `?service=`, or null when it is missing or not one of the services. */
+  /**
+   * The service from `?service=`; when it is missing or not one of the services, the
+   * first service. Null only for a manicurist with no service (or before the profile loads).
+   */
   serviceId: number | null;
   /** The Monday of the shown week: `?week=` when it is valid, else the default week. */
   week: string;
@@ -27,8 +30,8 @@ function defaultWeek(today: string, workingWeekdays: readonly number[]): string 
 /**
  * The booking choice kept in the URL: `?service=<id>&week=YYYY-MM-DD` (the
  * Monday), so a reload, a shared link and the return from login show the
- * same service and week. The params are checked in render: an unknown or
- * removed service is null, and a malformed week, one that is not a Monday or
+ * same service and week. The params are checked in render: a missing, unknown
+ * or removed service gives the first service, and a malformed week, one that is not a Monday or
  * one outside the bookable weeks gives the default week. The URL is never
  * rewritten for them. `manicurist` is null until the profile has loaded.
  */
@@ -40,10 +43,11 @@ export function useBookingParams(manicurist: Manicurist | null, today: string, l
   const firstWeek = startOfWeek(today);
   const lastWeek = startOfWeek(last);
 
+  // Like the default week, the default service (the first one) is never written to the URL.
   const serviceId =
     manicurist && /^[1-9]\d*$/.test(rawService) && manicurist.services.some((s) => s.id === Number(rawService))
       ? Number(rawService)
-      : null;
+      : (manicurist?.services[0]?.id ?? null);
 
   // `YYYY-MM-DD` strings compare in calendar order.
   const weekIsValid =

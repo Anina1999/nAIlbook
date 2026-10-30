@@ -101,9 +101,8 @@ export default function ManicuristPage() {
         {manicurist.bio && <p className={styles.bio}>{manicurist.bio}</p>}
       </section>
 
-      {manicurist.services.length === 0 ? (
-        <p className={styles.empty}>Все още няма добавени услуги.</p>
-      ) : (
+      {/* With no service there are no radios; the week table says so, as the one message. */}
+      {manicurist.services.length > 0 && (
         <fieldset className={styles.fieldset}>
           <legend className={styles.stepTitle}>Изберете услуга</legend>
           <div className={styles.options}>
@@ -139,27 +138,27 @@ export default function ManicuristPage() {
         </fieldset>
       )}
 
-      {/* The key resets the chosen time, the confirmation and the error for a new service or week. */}
-      {service && (
-        <BookingStep
-          key={`${service.id}-${week}`}
-          manicurist={manicurist}
-          service={service}
-          week={week}
-          firstWeek={firstWeek}
-          lastWeek={lastWeek}
-          onWeekChange={selectWeek}
-          weekSlots={weekSlots}
-          onReload={() => setReloadCount((count) => count + 1)}
-        />
-      )}
+      {/* Shown with no service too, with the busy times and days off.
+          The key resets the chosen time, the confirmation and the error for a new service or week. */}
+      <BookingStep
+        key={`${service?.id ?? 'none'}-${week}`}
+        manicurist={manicurist}
+        service={service}
+        week={week}
+        firstWeek={firstWeek}
+        lastWeek={lastWeek}
+        onWeekChange={selectWeek}
+        weekSlots={weekSlots}
+        onReload={() => setReloadCount((count) => count + 1)}
+      />
     </div>
   );
 }
 
 type BookingStepProps = {
   manicurist: Manicurist;
-  service: Service;
+  /** Null only when the manicurist has no service: the table has no free time then. */
+  service: Service | null;
   week: string;
   firstWeek: string;
   lastWeek: string;
@@ -169,7 +168,7 @@ type BookingStepProps = {
   onReload: () => void;
 };
 
-/** The week table of the chosen service, the summary and «Запази час». */
+/** The week table (with the free times of the chosen service, if there is one), the summary and «Запази час». */
 function BookingStep({
   manicurist,
   service,
@@ -196,7 +195,7 @@ function BookingStep({
 
   // Only a time the server still offers in the week on screen can be booked.
   const data = weekSlots.data;
-  const isCurrent = data !== null && data.week === week && data.serviceId === service.id;
+  const isCurrent = data !== null && data.week === week && data.serviceId === (service?.id ?? null);
   const selected = chosen && isCurrent && data.days[chosen.date]?.slots.includes(chosen.slot) ? chosen : null;
 
   const selectHandler = (date: string, slot: string) => {
@@ -206,7 +205,7 @@ function BookingStep({
   };
 
   const bookHandler = () => {
-    if (!selected) return;
+    if (!selected || !service) return;
     if (!user) {
       // Login returns to `from`, so the same service and week come back; the time is picked again.
       navigate('/login', { state: { from: location.pathname + location.search } });
@@ -227,7 +226,8 @@ function BookingStep({
         onWeekChange={onWeekChange}
         workingHours={manicurist.workingHours}
         data={data}
-        loading={weekSlots.loading}
+        // Data of another week or service is still loading, even before the load's effect has run.
+        loading={weekSlots.loading || (data !== null && !isCurrent)}
         error={weekSlots.error}
         selected={selected?.slot ?? null}
         onSelect={selectHandler}
@@ -247,7 +247,7 @@ function BookingStep({
         )}
       </div>
 
-      {selected && (
+      {selected && service && (
         <div className={styles.summary}>
           <p className={styles.summaryText}>
             {service.name}, {formatLongDate(selected.date)}, {formatTime(selected.slot)},{' '}

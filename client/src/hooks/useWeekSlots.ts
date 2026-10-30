@@ -2,31 +2,36 @@ import { getSlots, type Manicurist, type Service, type SlotsResponse } from '../
 import { weekDates } from '../utils/dates';
 import { useAsync, type AsyncState } from './useAsync';
 
-/** The free slots of one week, with the week and the service they belong to. */
+/** One week of `/slots`, with the week and the service it was loaded for. */
 export type WeekSlots = {
   /** The Monday of the week. */
   week: string;
-  serviceId: number;
-  durationMin: number;
+  /**
+   * The chosen service, or null when the manicurist has none: then every day's
+   * `slots` is `[]` and only `busy` and `dayOff` count.
+   */
+  serviceId: number | null;
   /** `/slots` per working date between today and the limit; the other dates are not requested. */
   days: Record<string, SlotsResponse>;
 };
 
 type WeekSlotsOptions = {
   manicurist: Manicurist | null;
+  /** Null when the manicurist has no service: the week still loads, for its busy times and days off. */
   service: Service | null;
   /** The Monday of the week to load. */
   week: string;
   today: string;
   last: string;
-  /** Bumped after a booking or a 409, so the week loads again. */
+  /** Bumped after a booking or a conflict, so the week loads again. */
   reloadCount: number;
 };
 
 /**
  * Loads `/slots` for every working date of the week between today and the
  * 12-month limit, all with one signal, so a new week or service aborts every
- * request of the old one. The data is null while no service is chosen.
+ * request of the old one. Without a service the requests carry no
+ * `serviceId`. The data is null until the profile has loaded.
  */
 export function useWeekSlots({
   manicurist,
@@ -36,22 +41,21 @@ export function useWeekSlots({
   last,
   reloadCount,
 }: WeekSlotsOptions): AsyncState<WeekSlots | null> {
-  // The working hours come with the profile, which also turns serviceId from null into an id.
+  // The working hours come with the profile, which also turns the id from null into a number.
   const manicuristId = manicurist?.id ?? null;
   const serviceId = service?.id ?? null;
 
   return useAsync<WeekSlots | null>(
     async (signal) => {
-      if (!manicurist || !service) return null;
+      if (!manicurist) return null;
       const dates = weekDates(
         week,
         manicurist.workingHours.map((hours) => hours.weekday),
       ).filter((date) => date >= today && date <= last);
-      const responses = await Promise.all(dates.map((date) => getSlots(manicurist.id, service.id, date, signal)));
+      const responses = await Promise.all(dates.map((date) => getSlots(manicurist.id, serviceId, date, signal)));
       return {
         week,
-        serviceId: service.id,
-        durationMin: service.durationMin,
+        serviceId,
         days: Object.fromEntries(dates.map((date, index) => [date, responses[index]])),
       };
     },

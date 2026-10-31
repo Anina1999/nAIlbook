@@ -7,6 +7,7 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Home from './pages/home/Home';
 import ManicuristPage from './pages/manicurist/Manicurist';
+import DaysOff from './pages/days-off/DaysOff';
 import MyBookings from './pages/my-bookings/MyBookings';
 
 export default function App() {
@@ -22,6 +23,9 @@ export default function App() {
           </Route>
           <Route element={<RoleGuard roles={['CLIENT']} />}>
             <Route path="/my-bookings" element={<MyBookings />} />
+          </Route>
+          <Route element={<RoleGuard roles={['MANICURIST']} />}>
+            <Route path="/days-off" element={<DaysOff />} />
           </Route>
         </Route>
       </Routes>

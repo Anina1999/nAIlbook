@@ -1,0 +1,34 @@
+@reference "../../index.css";
+
+.page {
+  @apply flex flex-col gap-8;
+}
+
+.intro {
+  @apply flex flex-col gap-2;
+}
+
+/* Titles in the display font on the sheet (ui-design, Type). */
+.title {
+  @apply font-display text-3xl font-bold text-ink;
+}
+
+.section {
+  @apply flex flex-col gap-4;
+}
+
+/* Focused after a removal, when the row and its button are gone. */
+.sectionTitle {
+  @apply rounded-lg font-display text-2xl font-bold text-ink;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+/* muted on the sheet: 5.8. */
+.note {
+  @apply text-muted;
+}
+
+/* success on the sheet: 5.0. Never hidden, so it is announced. */
+.success {
+  @apply font-semibold text-success;
+}

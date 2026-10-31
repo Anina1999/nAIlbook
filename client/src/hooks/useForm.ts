@@ -55,5 +55,8 @@ export function useForm<V extends Values>(initialValues: V) {
       }
     };
 
-  return { values, changeHandler, submitHandler, pending, formError, fieldErrors };
+  /** Puts the initial values back, after a submit that should leave an empty form. */
+  const reset = () => setValues(initialValues);
+
+  return { values, changeHandler, submitHandler, pending, formError, fieldErrors, reset };
 }

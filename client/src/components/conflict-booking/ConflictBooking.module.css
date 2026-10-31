@@ -1,0 +1,45 @@
+@reference "../../index.css";
+
+/* A row of the conflict list; the list draws the lines between rows. */
+.row {
+  @apply flex min-w-0 flex-col gap-2 px-4 py-3;
+}
+
+/* ink on white: 15.9. */
+.time {
+  @apply text-lg font-semibold tabular-nums;
+}
+
+.service {
+  @apply wrap-break-word;
+}
+
+.client {
+  @apply flex flex-col;
+}
+
+.name {
+  @apply font-semibold wrap-break-word;
+}
+
+.phone {
+  @apply flex flex-wrap items-center gap-x-2;
+}
+
+.phoneLabel {
+  @apply font-semibold;
+}
+
+.link {
+  @apply inline-flex min-h-11 items-center rounded-lg text-accent hover:text-accent-strong hover:underline;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+/* muted on white: 6.0. */
+.note {
+  @apply text-muted;
+}
+
+.actions {
+  @apply flex flex-wrap gap-2;
+}

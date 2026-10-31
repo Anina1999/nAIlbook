@@ -27,3 +27,8 @@
   @apply min-w-0;
   flex: 1 1 260px;
 }
+
+/* As in the design: below lg «Търсене» takes its own line, the full width, 12px lower. */
+.submit {
+  @apply max-lg:mt-3 max-lg:basis-full;
+}

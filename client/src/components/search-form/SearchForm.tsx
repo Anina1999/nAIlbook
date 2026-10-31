@@ -48,7 +48,7 @@ export default function SearchForm({ initialValues, onSearch }: SearchFormProps)
           onChange={changeHandler}
         />
       </div>
-      <Button type="submit" variant="search">
+      <Button type="submit" variant="search" className={styles.submit}>
         Търсене
       </Button>
     </form>

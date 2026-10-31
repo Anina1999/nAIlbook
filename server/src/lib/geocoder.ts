@@ -20,30 +20,75 @@ function unavailable() {
 
 const normalise = (text: string) => text.trim().toLocaleLowerCase('bg');
 
+// «ул.», «бул.» and their long forms at the start of the street. OpenStreetMap
+// often names the street without them, or as another type («бул.» for «ул.»).
+const STREET_TYPE = /^(?:(?:ул|бул)\.\s*|(?:ул|бул|улица|булевард)\s+)/iu;
+
+// The street without its type, or null when it has none (no second request).
+function stripStreetType(street: string): string | null {
+  if (!STREET_TYPE.test(street)) return null;
+  return street.replace(STREET_TYPE, '').trim() || null;
+}
+
+// A house number at the end: «4», «4А», «12-14», «3/5». OpenStreetMap often
+// has the street but not the house, and with the number Nominatim may return
+// only that house in another town.
+const HOUSE_NUMBER = /\s+\d[\p{L}\d/-]*$/u;
+
+// The street without its number, or null when it has none (no last request).
+function stripHouseNumber(street: string): string | null {
+  if (!HOUSE_NUMBER.test(street)) return null;
+  return street.replace(HOUSE_NUMBER, '').trim() || null;
+}
+
+// The streets to ask for, in order: as typed, without the street type, then
+// without the number. Each is asked only when the one before found no match.
+function streetsToTry(street: string): string[] {
+  const withoutType = stripStreetType(street);
+  const withoutNumber = stripHouseNumber(withoutType ?? street);
+  return [street, withoutType, withoutNumber].filter((s): s is string => s !== null);
+}
+
+// One search result with addressdetails=1.
+type NominatimPlace = {
+  lat?: unknown;
+  lon?: unknown;
+  address?: { city?: string; town?: string; village?: string };
+};
+
+// A result in another town of the same province (address.state) is not a match.
+function inCity(place: NominatimPlace, city: string): boolean {
+  const locality = place.address?.city ?? place.address?.town ?? place.address?.village;
+  return locality !== undefined && normalise(locality) === normalise(city);
+}
+
 type NominatimOptions = { fetch: typeof fetch; userAgent: string };
 
 // The real geocoder. Each instance has its own queue and cache, so a unit test
 // can pass a stub fetch and fake timers (setTimeout, clearTimeout and Date).
-// Requests run one at a time, at least 1000 ms apart. Found and not-found
-// answers are cached by city and address, ignoring case and outer spaces;
-// failures are not, so the next lookup asks again.
+// Requests run one at a time, at least 1000 ms apart. The first result in the
+// given city wins; when none is, the street is asked again without «ул.»/«бул.»
+// and then without the house number. Found and not-found answers are cached by city and the original
+// address, ignoring case and outer spaces; failures are not, so the next
+// lookup asks again.
 export function createNominatimGeocoder({ fetch, userAgent }: NominatimOptions): Geocoder {
   const cache = new Map<string, Coordinates | null>();
   let queue: Promise<unknown> = Promise.resolve();
   let lastRequestAt = -Infinity;
 
-  async function search(address: string, city: string): Promise<Coordinates | null> {
+  async function search(street: string, city: string): Promise<Coordinates | null> {
     const wait = lastRequestAt + MIN_INTERVAL_MS - Date.now();
     if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
     lastRequestAt = Date.now();
 
     const url = new URL(SEARCH_URL);
     url.search = new URLSearchParams({
-      street: address,
+      street,
       city,
       country: 'България',
       format: 'jsonv2',
-      limit: '1',
+      addressdetails: '1',
+      limit: '5',
     }).toString();
 
     const controller = new AbortController();
@@ -54,9 +99,10 @@ export function createNominatimGeocoder({ fetch, userAgent }: NominatimOptions):
       if (!response.ok) throw unavailable();
       const results: unknown = await response.json();
       if (!Array.isArray(results)) throw unavailable();
-      if (results.length === 0) return null;
-      const latitude = Number(results[0]?.lat);
-      const longitude = Number(results[0]?.lon);
+      const match = (results as NominatimPlace[]).find((place) => inCity(place, city));
+      if (!match) return null;
+      const latitude = Number(match.lat);
+      const longitude = Number(match.lon);
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) throw unavailable();
       return { latitude, longitude };
     } catch (err) {
@@ -75,7 +121,11 @@ export function createNominatimGeocoder({ fetch, userAgent }: NominatimOptions):
     const run = queue.then(async () => {
       // An identical lookup that waited in the queue may have been answered.
       if (cache.has(key)) return cache.get(key)!;
-      const result = await search(address.trim(), city.trim());
+      let result: Coordinates | null = null;
+      for (const street of streetsToTry(address.trim())) {
+        result = await search(street, city.trim());
+        if (result) break;
+      }
       cache.set(key, result);
       return result;
     });

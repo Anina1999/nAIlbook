@@ -1,0 +1,25 @@
+@reference "../../index.css";
+
+.results {
+  @apply flex flex-col;
+}
+
+/* ui-design, Components, Studio map: the title, the line 6px under it, the map 20px below. */
+.mapSection {
+  @apply flex flex-col gap-5;
+}
+
+.mapHead {
+  @apply flex flex-col gap-1.5;
+}
+
+/* moon at the lightest point of the backdrop: 5.89 without the shadow. */
+.mapCopy {
+  @apply text-base leading-tight font-medium text-moon text-shadow-copy;
+}
+
+/* 300px on a phone, 460px from `sm`. The rounded clip holds Leaflet's tiles. */
+.mapFrame {
+  @apply h-75 overflow-hidden rounded-map border border-white/25 sm:h-115;
+  box-shadow: 0 20px 50px color-mix(in srgb, var(--color-shade) 40%, transparent);
+}

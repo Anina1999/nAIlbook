@@ -1,4 +1,5 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { API_URL } from './ports';
 
 // Both projects book on the same e2e.db in one run, so a test always takes the
@@ -246,7 +247,8 @@ async function backToBackStart(page: Page): Promise<{ prefix: string; time: stri
 
 test('a guest picks a time, logs in, comes back to the same service and week and books', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('link', { name: MARIA, exact: true }).click();
+  // «Запази час» is the only way from a card to the manicurist's page.
+  await page.getByRole('link', { name: `Запази час при ${MARIA}`, exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: MARIA })).toBeVisible();
 
   await pickService(page);
@@ -423,4 +425,16 @@ test('a client books two 40-minute times back to back, the second one off the gr
 
   await expect(busyCell(page, time, second)).toHaveCount(firstBefore + 1);
   await expect(busyCell(page, second, end)).toHaveCount(secondBefore + 1);
+});
+
+test('the page shows the studio on a map with exactly one marker, a picture with no action', async ({ page }) => {
+  await openMaria(page);
+  const map = page.getByRole('region', { name: 'Карта на студиото' });
+  await expect(map).toBeVisible();
+
+  await expect(map.getByRole('img', { name: `${MARIA} на картата`, exact: true })).toHaveCount(1);
+  await expect(map.getByRole('img', { name: / на картата$/ })).toHaveCount(1);
+  // Without an action the marker is not a button.
+  await expect(map.getByRole('button', { name: / на картата$/ })).toHaveCount(0);
+  expect(await horizontalOverflow(page)).toBe(0);
 });

@@ -1,0 +1,81 @@
+@reference "../../index.css";
+
+/* The Leaflet container (ui-design, Studio map). It fills the frame the page gives it,
+   which sets the height, the radius and the border. `isolation` keeps Leaflet's panes
+   (z-index 400–1000) under the header and the carousel arrows. The focus outline sits
+   inside, so the frame's rounded clip does not cut it; accent on the light tiles. */
+.map {
+  @apply h-full w-full;
+  isolation: isolate;
+}
+
+.map:focus-visible {
+  @apply outline-2 -outline-offset-4 outline-accent;
+}
+
+/* Leaflet's own light zoom buttons, at 44×44px. Three classes, so they win over
+   leaflet.css (`.leaflet-touch .leaflet-bar a`) whatever the order of the stylesheets. */
+.map :global(.leaflet-control-zoom.leaflet-bar a) {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+/* The marker's 44×44px target, with the dot centred in it. */
+.marker {
+  @apply flex items-center justify-center rounded-full;
+}
+
+.selectable {
+  @apply cursor-pointer;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent;
+}
+
+/* The dot is drawn at the active size (32px) and scaled down, so a size change is only a
+   transform. Its border, ring and shadow are divided by the scale, so they keep their
+   size on screen: a 22px accent dot with a 4px white border. accent and plum on the
+   light tiles are above 3:1 for a graphic; the white border keeps it visible on dark tiles. */
+.dot {
+  --scale: calc(22 / 32);
+  @apply flex size-8 items-center justify-center rounded-full border-solid border-white bg-accent;
+  border-width: calc(4px / var(--scale));
+  box-shadow: 0 calc(4px / var(--scale)) calc(10px / var(--scale))
+    color-mix(in srgb, var(--color-accent-strong) 30%, transparent);
+  transform: scale(var(--scale));
+}
+
+/* Highlighted (hover or focus on its card, hover or focus on the marker): 26px and a 3px candy ring. */
+.highlighted .dot,
+.selectable:not(.active):hover .dot,
+.selectable:not(.active):focus-visible .dot {
+  --scale: calc(26 / 32);
+  box-shadow:
+    0 0 0 calc(3px / var(--scale)) var(--color-candy),
+    0 calc(4px / var(--scale)) calc(10px / var(--scale))
+      color-mix(in srgb, var(--color-accent-strong) 30%, transparent);
+}
+
+/* Active: 32px plum with the star, a 3px candy ring and a soft glow-candy halo. */
+.active .dot {
+  --scale: 1;
+  @apply bg-plum;
+  box-shadow:
+    0 0 0 3px var(--color-candy),
+    0 0 18px 4px color-mix(in srgb, var(--color-glow-candy) 70%, transparent);
+}
+
+.star {
+  @apply hidden;
+  fill: var(--color-white);
+}
+
+.active .star {
+  @apply block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dot {
+    transition: transform 150ms ease;
+  }
+}

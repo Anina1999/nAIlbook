@@ -64,7 +64,7 @@ The detailed rules live in project skills under [.claude/skills/](../.claude/ski
 
 - **Owns:** `client/`.
 - **Exposes:**
-  - for everyone: search and the manicurist page with a slot picker;
+  - for everyone: search, with the results in a carousel and a map of the studios (Leaflet on OpenStreetMap tiles) synced with the active card, and the manicurist page with a slot picker and the studio on a map;
   - for guests: login and registration;
   - for clients: my bookings;
   - for every logged-in user: edit profile (email, optional phone, password; the name cannot be changed);

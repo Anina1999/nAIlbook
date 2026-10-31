@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { API_URL } from './ports';
 
 test('the home page opens', async ({ page }) => {

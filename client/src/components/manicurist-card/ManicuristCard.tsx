@@ -14,8 +14,12 @@ function moreServicesText(count: number): string {
 
 type ManicuristCardProps = {
   manicurist: ManicuristSummary;
-  /** The first card in view of the carousel: a light runs round its border. */
-  active?: boolean;
+  /** The active card of the search (its marker is the active one): a light runs round its border. */
+  active: boolean;
+  /** A click anywhere on the card makes it the active card; a click on the active card keeps it. */
+  onActivate: (id: number) => void;
+  /** Hover or focus on the card reports its id, and `null` when it ends, so its marker stands out. */
+  onHighlight: (id: number | null) => void;
 };
 
 function PinIcon() {
@@ -39,21 +43,27 @@ function PinIcon() {
 }
 
 /**
- * A search result on an iridescent card. The name link is stretched over the whole
- * card, so a click anywhere opens the manicurist's page, while the link's name stays
- * the name alone. «Запази час» is a second link above it, to the free times.
+ * A search result on an iridescent card. The card selects, it does not open a page: the
+ * name is a button (`aria-pressed` on the active card) stretched over the whole card, so a
+ * click anywhere makes it the active card, while the button's name stays the name alone.
+ * Hover and focus report the card through `onHighlight`. «Запази час» is a link above the
+ * button and the only way to the manicurist's page, at the free times.
  */
-export default function ManicuristCard({
-  manicurist,
-  active = false,
-}: ManicuristCardProps) {
+export default function ManicuristCard({ manicurist, active, onActivate, onHighlight }: ManicuristCardProps) {
   const page = `/manicurists/${manicurist.id}`;
   const shown = manicurist.services.slice(0, SHOWN_SERVICES);
   const hidden = manicurist.services.length - shown.length;
+  const highlightHandler = () => onHighlight(manicurist.id);
+  const unhighlightHandler = () => onHighlight(null);
 
   return (
+    // Focus bubbles in React, so the button and the link both report the card.
     <article
       className={[styles.card, active && styles.active].filter(Boolean).join(' ')}
+      onMouseEnter={highlightHandler}
+      onMouseLeave={unhighlightHandler}
+      onFocus={highlightHandler}
+      onBlur={unhighlightHandler}
     >
       <div className={styles.head}>
         <span className={styles.avatar} aria-hidden="true">
@@ -61,9 +71,14 @@ export default function ManicuristCard({
         </span>
         <div className={styles.identity}>
           <h3 className={styles.name}>
-            <Link to={page} className={styles.link}>
+            <button
+              type="button"
+              aria-pressed={active}
+              className={styles.select}
+              onClick={() => onActivate(manicurist.id)}
+            >
               {manicurist.name}
-            </Link>
+            </button>
           </h3>
           <p className={styles.city}>
             <PinIcon />

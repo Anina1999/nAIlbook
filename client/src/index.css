@@ -128,6 +128,7 @@
   --radius-control: 10px;         /* buttons and inputs on the night, «Запази час» */
   --radius-card: 16px;            /* the iridescent card */
   --radius-panel: 18px;           /* the glass search panel */
+  --radius-map: 20px;             /* the studio map on the night */
 
   /* --- The shadow under copy text on the night --- */
   --text-shadow-copy:

@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { A11y, Keyboard } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperInstance } from 'swiper/types';
@@ -16,6 +16,12 @@ type ManicuristCarouselProps = {
   manicurists: ManicuristSummary[];
   /** A new search is loading: the counter line says «Зареждане…» and the cards stay. */
   loading: boolean;
+  /** The active card, owned by the parent; the carousel brings it into view when it is not. */
+  activeId: number;
+  /** A click on a card, or the user moving the carousel (the first card in view), reports the new active card. */
+  onActiveChange: (id: number) => void;
+  /** Hover or focus on a card reports its id, and `null` when it ends. */
+  onHighlight: (id: number | null) => void;
 };
 
 /** 1 card on a phone, 2 from `sm`, 3 from `lg` (Tailwind's breakpoints). */
@@ -56,20 +62,47 @@ function counterText(first: number, last: number, total: number): string {
   return first === last ? `Показана ${first + 1} от ${total}` : `Показани ${first + 1}–${last + 1} от ${total}`;
 }
 
+/** The cards in view per Swiper's current breakpoint: 1, 2 or 3. */
+function slidesPerView(swiper: SwiperInstance): number {
+  return typeof swiper.params.slidesPerView === 'number' ? swiper.params.slidesPerView : 1;
+}
+
+/**
+ * The index of the first card in view. Swiper's activeIndex can pass the last view
+ * (rewinding back from the first card, focusing a card with Tab); the cards in view
+ * always end at the last one.
+ */
+function firstInView(activeIndex: number, perView: number, total: number): number {
+  return Math.max(0, Math.min(activeIndex, total - Math.min(perView, total)));
+}
+
 /**
  * The search results as a Swiper carousel with its own arrows, a counter and dots.
  * The arrows go round (`rewind`), so they are never disabled; the keyboard's arrow
- * keys move it too. Give it a `key` from the search, so a new search starts at the
- * first card.
+ * keys move it too. The counter and the dots follow the cards in view. The active card
+ * is `activeId` from the parent: the user moving the carousel makes the first card in
+ * view active, and one effect brings the active card into view when it is not.
  */
-export default function ManicuristCarousel({ heading, manicurists, loading }: ManicuristCarouselProps) {
+export default function ManicuristCarousel({
+  heading,
+  manicurists,
+  loading,
+  activeId,
+  onActiveChange,
+  onHighlight,
+}: ManicuristCarouselProps) {
   const reducedMotion = useReducedMotion();
   const swiperRef = useRef<SwiperInstance | null>(null);
+  // True while the carousel moves on its own (its own slideTo, or Swiper's handling of a
+  // resize): the slide change then follows the active card instead of choosing one.
+  // Swiper emits slideChange synchronously inside slideTo whatever its `runCallbacks`
+  // argument says, so a flag around the call is the only way to tell the moves apart.
+  const ownMoveRef = useRef(false);
   const [view, setView] = useState({ activeIndex: 0, perView: 1 });
+  const speed = reducedMotion ? 0 : 300;
 
   const syncHandler = (swiper: SwiperInstance) => {
-    const perView = typeof swiper.params.slidesPerView === 'number' ? swiper.params.slidesPerView : 1;
-    setView({ activeIndex: swiper.activeIndex, perView });
+    setView({ activeIndex: swiper.activeIndex, perView: slidesPerView(swiper) });
   };
 
   const swiperHandler = (swiper: SwiperInstance) => {
@@ -77,12 +110,45 @@ export default function ManicuristCarousel({ heading, manicurists, loading }: Ma
     syncHandler(swiper);
   };
 
-  // Swiper's activeIndex can pass the last view (rewinding back from the first card,
-  // focusing a card with Tab); the cards in view always end at the last one.
+  // The arrows, the arrow keys, a swipe or Tab to a card out of view: the first card in view becomes active.
+  const slideChangeHandler = (swiper: SwiperInstance) => {
+    syncHandler(swiper);
+    if (ownMoveRef.current) return;
+    const index = firstInView(swiper.activeIndex, slidesPerView(swiper), manicurists.length);
+    onActiveChange(manicurists[index].id);
+  };
+
+  // On a breakpoint change the active card stays; the effect below brings it back into view.
+  const beforeResizeHandler = () => {
+    ownMoveRef.current = true;
+  };
+  const resizeHandler = () => {
+    ownMoveRef.current = false;
+  };
+
   const total = manicurists.length;
   const perView = Math.min(view.perView, total);
-  const first = Math.min(view.activeIndex, total - perView);
+  const first = firstInView(view.activeIndex, perView, total);
   const last = first + perView - 1;
+  const activeIndex = manicurists.findIndex((manicurist) => manicurist.id === activeId);
+
+  // Keeps the active card in view: when it is before the cards in view, it becomes the
+  // first; when it is after them, the last. A card already in view does not move the
+  // carousel. One path for a click on a card and for a click on its marker.
+  useEffect(() => {
+    const swiper = swiperRef.current;
+    if (!swiper || activeIndex < 0) return;
+    let target: number;
+    if (activeIndex < first) target = activeIndex;
+    else if (activeIndex > last) target = activeIndex - perView + 1;
+    else return;
+    ownMoveRef.current = true;
+    try {
+      swiper.slideTo(target, speed);
+    } finally {
+      ownMoveRef.current = false;
+    }
+  }, [activeIndex, first, last, perView, speed]);
 
   return (
     <div className={styles.carousel}>
@@ -124,14 +190,21 @@ export default function ManicuristCarousel({ heading, manicurists, loading }: Ma
           slidesPerView={1}
           spaceBetween={12}
           breakpoints={BREAKPOINTS}
-          speed={reducedMotion ? 0 : 300}
+          speed={speed}
           onSwiper={swiperHandler}
-          onSlideChange={syncHandler}
+          onSlideChange={slideChangeHandler}
           onBreakpoint={syncHandler}
+          onBeforeResize={beforeResizeHandler}
+          onResize={resizeHandler}
         >
-          {manicurists.map((manicurist, index) => (
+          {manicurists.map((manicurist) => (
             <SwiperSlide key={manicurist.id}>
-              <ManicuristCard manicurist={manicurist} active={index === first} />
+              <ManicuristCard
+                manicurist={manicurist}
+                active={manicurist.id === activeId}
+                onActivate={onActiveChange}
+                onHighlight={onHighlight}
+              />
             </SwiperSlide>
           ))}
         </Swiper>

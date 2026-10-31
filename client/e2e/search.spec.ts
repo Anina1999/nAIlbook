@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { API_URL } from './ports';
 
 // Other tests register manicurists in the same e2e.db, so these tests look for
@@ -49,24 +50,32 @@ test('a search by city and service is kept in the URL and after a reload', async
   await expect(page.getByLabel('Услуга')).toHaveValue('Педикюр');
   await expect(cardTitle(page, 'Ива Димитрова')).toBeVisible();
   await expect(cardTitle(page, 'Мария Петрова')).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Ива Димитрова', exact: true })).toHaveAttribute(
+  // The card selects instead of opening a page: the name is a button, not a link, and
+  // «Запази час» is the only way to the manicurist's page.
+  const nameButton = page.getByRole('button', { name: 'Ива Димитрова', exact: true });
+  await expect(nameButton).toBeVisible();
+  await expect(nameButton).not.toHaveAttribute('href');
+  await expect(page.getByRole('link', { name: 'Ива Димитрова', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Запази час при Ива Димитрова', exact: true })).toHaveAttribute(
     'href',
-    `/manicurists/${iva!.id}`,
+    `/manicurists/${iva!.id}#schedule`,
   );
 
   const card = page.getByRole('article').filter({ has: cardTitle(page, 'Ива Димитрова') });
   // Prices always carry their cents; the exact seeded prices are not this test's concern.
   await expect(card.getByText(/^\d+,\d{2} €$/).first()).toBeVisible();
 
-  // The name link is stretched over the card, so a real click on the city text opens the page too.
-  // A mouse click at the city's position is used, because the link covers the text on purpose.
-  // The hero pushes the cards below a 720px viewport, and mouse.click does not scroll.
+  // The name button is stretched over the card, so a real click on the city text makes the
+  // card active and the page stays. A mouse click at the city's position is used, because
+  // the button covers the text on purpose. The hero pushes the cards below a 720px
+  // viewport, and mouse.click does not scroll.
   const city = card.getByText('Пловдив', { exact: true });
   await city.evaluate((el) => el.scrollIntoView({ block: 'center' }));
   const cityBox = await city.boundingBox();
   expect(cityBox).not.toBeNull();
   await page.mouse.click(cityBox!.x + cityBox!.width / 2, cityBox!.y + cityBox!.height / 2);
-  await expect(page).toHaveURL((url) => url.pathname === `/manicurists/${iva!.id}`);
+  await expect(nameButton).toHaveAttribute('aria-pressed', 'true');
+  await expect(page).toHaveURL(hasSearch({ city: 'Пловдив', service: 'Педикюр' }));
 });
 
 test('a search with no result offers to clear it and the cleared search shows the manicurists', async ({

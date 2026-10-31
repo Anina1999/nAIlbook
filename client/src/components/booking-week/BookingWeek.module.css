@@ -1,0 +1,135 @@
+@reference "../../index.css";
+
+/* The pink board of the week table (ui-design, Week table, Booking week board): the
+   week navigation, the count line and the days, with no border. */
+.board {
+  @apply flex flex-col gap-2 rounded-xl bg-accent-soft p-2 sm:p-4;
+}
+
+/* The week navigation is its own white bar, as on the week table. */
+.nav {
+  @apply flex items-center justify-between gap-2 rounded-lg bg-raised;
+}
+
+/* ink on white: 15.9. */
+.title {
+  @apply min-w-0 text-center text-lg font-semibold text-ink tabular-nums;
+}
+
+/* A quiet icon button inside the bar; the transparent border keeps its size when disabled. */
+.navButton {
+  @apply inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-transparent bg-transparent text-ink;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+  @apply motion-safe:transition-colors motion-safe:duration-150;
+  @apply enabled:hover:bg-accent-soft;
+  @apply disabled:text-muted disabled:bg-surface disabled:border-line disabled:cursor-not-allowed;
+}
+
+.icon {
+  @apply size-5;
+}
+
+/* «1 час през седмицата»; muted on accent-soft: 4.9. */
+.status {
+  @apply min-h-6 text-muted;
+}
+
+/* The days stacked on a phone and a tablet, seven columns from lg. */
+.days {
+  @apply flex flex-col gap-3 lg:grid lg:grid-cols-7 lg:gap-2;
+}
+
+.day {
+  @apply flex min-w-0 flex-col gap-1.5;
+}
+
+/* From lg the heading is centred over its column, like the week table's headers. */
+.dayHeading {
+  @apply font-normal lg:text-center;
+}
+
+/* The short underline under each day, as on the week table. */
+.dayLabel {
+  @apply inline-block border-b-2 border-accent px-1 pb-1;
+}
+
+/* ink on accent-soft: 12.9. */
+.weekday {
+  @apply font-semibold text-ink lg:block;
+}
+
+/* muted on accent-soft: 4.9. */
+.dayMonth {
+  @apply text-sm text-muted tabular-nums lg:block;
+}
+
+.bookings {
+  @apply flex flex-col gap-1.5;
+}
+
+/* A day with no booking: an empty dashed area, one tile high; from lg it fills the
+   column, so the week reads as a board. */
+.empty {
+  @apply min-h-11 rounded-lg border-2 border-dashed border-accent/30 lg:flex-1;
+}
+
+/* A booking is a white tile button. ink on white: 15.9, accent on white: 7.4,
+   muted on white: 6.0; accent on accent-soft (hover): 6.0. */
+.booking {
+  @apply flex min-h-11 w-full flex-col items-start gap-0.5 rounded-lg border border-accent bg-raised p-2 text-left text-ink;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+  @apply motion-safe:transition-colors motion-safe:duration-150;
+}
+
+.booking:not([aria-pressed='true']):hover {
+  @apply bg-accent-soft;
+}
+
+.time {
+  @apply font-semibold text-accent tabular-nums;
+}
+
+.service {
+  @apply text-sm wrap-break-word;
+}
+
+.name {
+  @apply text-sm text-muted wrap-break-word;
+}
+
+.meta {
+  @apply flex flex-wrap items-center gap-x-2 gap-y-1 text-sm;
+}
+
+/* The active booking: filled, like a chosen time. white on accent: 7.4. */
+.booking[aria-pressed='true'] {
+  @apply bg-accent text-white;
+}
+
+.booking[aria-pressed='true'] .time,
+.booking[aria-pressed='true'] .name {
+  @apply text-white;
+}
+
+/* A cancelled booking is muted and still selectable. muted on surface: 5.6, on white
+   (hover): 6.0. */
+.cancelled {
+  @apply border-line bg-surface text-muted;
+}
+
+.cancelled:not([aria-pressed='true']):hover {
+  @apply bg-raised;
+}
+
+.cancelled .time {
+  @apply text-muted;
+}
+
+/* A cancelled active booking is filled with muted instead of accent. white on muted: 6.0. */
+.cancelled[aria-pressed='true'] {
+  @apply border-muted bg-muted text-white;
+}
+
+.srOnly {
+  @apply sr-only;
+}

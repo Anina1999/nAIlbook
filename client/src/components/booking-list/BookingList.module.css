@@ -1,0 +1,45 @@
+@reference "../../index.css";
+
+/* Rows in one container, not a card per row (ui-design, Components, Bookings rows). */
+.list {
+  @apply flex flex-col overflow-hidden rounded-xl border border-line bg-raised divide-y divide-line;
+}
+
+/* Stacked on a phone; from sm the date and time, the service and the price share a line. */
+.row {
+  @apply grid gap-1 px-4 py-3 sm:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_auto] sm:items-baseline sm:gap-x-6;
+}
+
+.when {
+  @apply flex flex-col;
+}
+
+.date {
+  @apply font-semibold wrap-break-word;
+}
+
+/* muted on white: 6.0. */
+.time {
+  @apply text-muted tabular-nums;
+}
+
+.what {
+  @apply flex min-w-0 flex-col;
+}
+
+.service {
+  @apply wrap-break-word;
+}
+
+.name {
+  @apply text-sm text-muted wrap-break-word;
+}
+
+.price {
+  @apply whitespace-nowrap;
+}
+
+/* The whole width of the row, under its other parts. muted on white: 6.0. */
+.cancelled {
+  @apply text-sm text-muted wrap-break-word sm:col-span-3;
+}

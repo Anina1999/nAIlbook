@@ -41,6 +41,22 @@ export function formatTime(iso: string): string {
   return timeFormat.format(new Date(iso));
 }
 
+/** Two UTC ISO times as one range on the Sofia clock: «11:00–12:30». */
+export function formatTimeRange(startIso: string, endIso: string): string {
+  return `${formatTime(startIso)}–${formatTime(endIso)}`;
+}
+
+/** Who cancelled a booking, for the client: `'CLIENT'` → «Отменен от вас.» */
+export function formatCancelledBy(cancelledBy: 'CLIENT' | 'MANICURIST' | null): string {
+  return cancelledBy === 'MANICURIST' ? 'Отменен от маникюриста.' : 'Отменен от вас.';
+}
+
+/** The bookings of a week: `0` → «Няма часове през тази седмица.», `1` → «1 час през седмицата», `3` → «3 часа през седмицата». */
+export function formatWeekBookingCount(count: number): string {
+  if (count === 0) return 'Няма часове през тази седмица.';
+  return `${count} ${count === 1 ? 'час' : 'часа'} през седмицата`;
+}
+
 /** Minutes from midnight as a clock time: `540` → «09:00». */
 export function formatMinutes(minutes: number): string {
   return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;

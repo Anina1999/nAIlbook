@@ -56,7 +56,7 @@ This list is the contract the client codes against. Write the shape of a new end
 
 `user` is `{ id, email, name, phone, role }`. `phone` is `""` when the user gave none; the same holds for `phone` in `booking` and `manicurist`.
 
-`booking` is `{ id, startAt, endAt, status, cancelledBy, cancelReason, serviceId, serviceName, priceCents, client: { id, name, phone }, manicurist: { id, name, phone, city, address } }`. `cancelledBy` and `cancelReason` are `null` while it is `BOOKED`. `serviceName` and `priceCents` are the snapshot from booking time; `serviceId` lets the client book the same service again. The nested users never carry an email.
+`booking` is `{ id, startAt, endAt, status, cancelledBy, cancelReason, serviceId, serviceName, priceCents, client: { id, name, phone }, manicurist: { id, name, phone, city, address, latitude, longitude } }`. `latitude` and `longitude` are the studio coordinates (numbers), so the client can show the studio on the map. `cancelledBy` and `cancelReason` are `null` while it is `BOOKED`. `serviceName` and `priceCents` are the snapshot from booking time; `serviceId` lets the client book the same service again. The nested users never carry an email.
 
 `manicurist` is `{ id, name, email, phone, city, address, latitude, longitude, bio, imageUrl, services, workingHours }`: `latitude` and `longitude` are the studio coordinates (numbers), active services by name, `workingHours` as `{ weekday, startMin, endMin }` by weekday. `email` is the manicurist's login email, shown as a contact on the public page; `PUT /api/me/profile` does not change it. The search results and the bookings never carry an email. `imageUrl` is read-only for now.
 

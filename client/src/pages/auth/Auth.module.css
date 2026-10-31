@@ -26,6 +26,11 @@
   @apply mb-1 font-semibold;
 }
 
+/* The `*` of a required field, as in FormField. danger on the sheet: 6.2. */
+.requiredMark {
+  @apply text-danger;
+}
+
 .options {
   @apply flex flex-wrap gap-x-6 gap-y-2;
 }

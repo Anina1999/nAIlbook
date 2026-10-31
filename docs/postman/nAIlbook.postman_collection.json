@@ -1052,6 +1052,10 @@
                   "const seeded = upcoming.find((b) => b.status === 'BOOKED' && b.manicurist.id === Number(pm.collectionVariables.get('manicuristId')));",
                   "pm.test('has an upcoming booking with the demo manicurist', () => pm.expect(seeded).to.be.an('object'));",
                   "pm.test('the nested users have no email', () => { pm.expect(seeded.client).to.not.have.property('email'); pm.expect(seeded.manicurist).to.not.have.property('email'); });",
+                  "const all = upcoming.concat(past);",
+                  "if (all.length > 0) {",
+                  "  pm.test('every booking has the studio coordinates as numbers', () => all.forEach((b) => { pm.expect(b.manicurist.latitude).to.be.a('number'); pm.expect(b.manicurist.longitude).to.be.a('number'); }));",
+                  "}",
                   "if (seeded) {",
                   "  pm.collectionVariables.set('serviceId', seeded.serviceId);",
                   "  pm.collectionVariables.set('seedStartAt', seeded.startAt);",
@@ -1262,7 +1266,11 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('200 OK', () => pm.response.to.have.status(200));",
-                  "pm.test('includes the new booking', () => pm.expect(pm.response.json().bookings.map((b) => b.id)).to.include(Number(pm.collectionVariables.get('newBookingId'))));"
+                  "pm.test('includes the new booking', () => pm.expect(pm.response.json().bookings.map((b) => b.id)).to.include(Number(pm.collectionVariables.get('newBookingId'))));",
+                  "const { bookings } = pm.response.json();",
+                  "if (bookings.length > 0) {",
+                  "  pm.test('every booking has the studio coordinates as numbers', () => bookings.forEach((b) => { pm.expect(b.manicurist.latitude).to.be.a('number'); pm.expect(b.manicurist.longitude).to.be.a('number'); }));",
+                  "}"
                 ]
               }
             }

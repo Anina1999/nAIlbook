@@ -58,10 +58,15 @@ export default function Register() {
         <h1 className={styles.title}>Регистрация</h1>
         {formError && <ErrorMessage message={formError.message} items={formError.items} />}
         <form noValidate className={styles.form} onSubmit={submitHandler(registerHandler, visibleFields)}>
-          <p className={styles.requiredNote}>Полетата със * са задължителни.</p>
+          <p className={styles.requiredNote}>
+            Полетата със <span className={styles.requiredMark}>*</span> са задължителни.
+          </p>
           <fieldset className={styles.fieldset} aria-describedby={fieldErrors.role ? roleErrorId : undefined}>
             <legend className={styles.legend}>
-              Тип профил<span aria-hidden="true">{' *'}</span>
+              Тип профил
+              <span aria-hidden="true" className={styles.requiredMark}>
+                {' *'}
+              </span>
             </legend>
             <div className={styles.options}>
               <label className={styles.option}>

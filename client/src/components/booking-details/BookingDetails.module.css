@@ -1,0 +1,72 @@
+@reference "../../index.css";
+
+/* A surface on the sheet, set apart by its border, not a shadow (ui-design, Components). */
+.panel {
+  @apply flex min-w-0 flex-col gap-2 rounded-xl border border-line bg-raised p-4;
+}
+
+/* Focused after a cancellation, when the form it held is gone. */
+.title {
+  @apply rounded-lg font-display text-xl font-bold wrap-break-word text-ink;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+/* ink on white: 15.9. */
+.time {
+  @apply text-lg font-semibold tabular-nums;
+}
+
+.service {
+  @apply wrap-break-word;
+}
+
+.studio {
+  @apply flex flex-col;
+}
+
+.name {
+  @apply font-semibold wrap-break-word;
+}
+
+/* muted on white: 6.0. */
+.place {
+  @apply text-muted wrap-break-word;
+}
+
+.phone {
+  @apply flex flex-wrap items-center gap-x-2;
+}
+
+.phoneLabel {
+  @apply font-semibold;
+}
+
+.link {
+  @apply inline-flex min-h-11 items-center rounded-lg text-accent hover:text-accent-strong hover:underline;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+.cancelInfo {
+  @apply flex flex-col items-start gap-1;
+}
+
+.reason {
+  @apply wrap-break-word;
+}
+
+.note {
+  @apply text-muted;
+}
+
+/* «Часът е отменен.» next to the action; success on white: 5.3. Never hidden, so it is announced. */
+.success {
+  @apply font-semibold text-success;
+}
+
+.form {
+  @apply flex flex-col gap-4;
+}
+
+.actions {
+  @apply flex flex-wrap gap-2;
+}

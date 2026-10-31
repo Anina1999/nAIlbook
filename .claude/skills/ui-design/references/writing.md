@@ -8,7 +8,7 @@ All UI text is in Bulgarian, in the polite plural form («Изберете», «
 
 - **Name things as the user knows them:** «Моите часове», «Работно време», «Почивни дни», «Свободни часове». Not system words like «слот» or «резервация №».
 - **A button says what happens:** «Запази час», «Запази промените», «Добави услуга». Never «Изпрати», «ОК» or «Потвърди» on their own.
-- **An action keeps its name through the flow:** «Запази час» → «Часът е запазен.» «Откажи часа» → the dialog asks «Да откажем ли часа в 14:30?» with «Откажи часа» and «Назад» → «Часът е отказан.»
+- **An action keeps its name through the flow:** «Запази час» → «Часът е запазен.» «Отмени часа» → the form asks for «Причина за отмяната» with «Потвърди отмяната» and «Назад» → «Часът е отменен.» and the badge «Отменен».
 - **Errors the client writes** say what happened and how to fix it, without apologies: «Изберете час, за да продължите.» Server messages are shown as they come.
-- **Empty states invite an action:** «Още нямате запазени часове.» with a link «Намерете маникюрист».
+- **Empty states invite an action:** «Още нямате запазени часове.» with a link «Към търсенето».
 - Sentence case, no filler, no exclamation marks, no emoji. Each piece of text does one job.

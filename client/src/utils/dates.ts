@@ -66,6 +66,11 @@ export function sofiaDateOf(instant: Date): string {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
+/** The Sofia date of a UTC ISO time: `2026-10-29T22:30:00.000Z` → `2026-10-30`. */
+export function sofiaDateOfIso(iso: string): string {
+  return sofiaDateOf(new Date(iso));
+}
+
 /** Minutes from midnight on the Sofia clock: `2026-11-03T10:10:00.000Z` → `730` (12:10). */
 export function minutesInSofia(iso: string): number {
   const values = Object.fromEntries(
@@ -116,6 +121,11 @@ export function mondayFirstIndex(weekday: number): number {
 /** The Monday of the week a date is in: `2026-11-08` (a Sunday) → `2026-11-02`. */
 export function startOfWeek(date: string): string {
   return addDays(date, -mondayFirstIndex(weekdayOf(date)));
+}
+
+/** The Monday of the Sofia week a UTC ISO time falls in: `2026-11-08T23:30:00.000Z` (Monday 01:30 in Sofia) → `2026-11-09`. */
+export function weekOfIso(iso: string): string {
+  return startOfWeek(sofiaDateOfIso(iso));
 }
 
 /**

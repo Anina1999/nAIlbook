@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
+import { contentOverflow, horizontalOverflow } from './layout';
 import { API_URL } from './ports';
 
 const CLIENT = { email: 'client@example.com', password: 'nailbook123', name: 'Анна Иванова' };
@@ -35,10 +36,6 @@ async function logIn(page: Page) {
   await page.getByLabel('Парола').fill(CLIENT.password);
   await page.getByRole('button', { name: 'Влез' }).click();
   await expect(mainNav(page).getByText(CLIENT.name)).toBeVisible();
-}
-
-async function horizontalOverflow(page: Page) {
-  return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
 test('a guest registers as a client without a phone field and sees their name in the menu', async ({
@@ -162,9 +159,11 @@ test('the login and register forms have no horizontal scroll at 375px', async ({
   await page.goto('/login');
   await expect(page.getByRole('heading', { name: 'Вход' })).toBeVisible();
   expect(await horizontalOverflow(page)).toBe(0);
+  expect(await contentOverflow(page)).toBe(0);
 
   await page.goto('/register');
   await page.getByLabel('Маникюрист').check();
   await expect(page.getByLabel('Град')).toBeVisible();
   expect(await horizontalOverflow(page)).toBe(0);
+  expect(await contentOverflow(page)).toBe(0);
 });

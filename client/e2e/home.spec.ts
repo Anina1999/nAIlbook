@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
+import { contentOverflow, horizontalOverflow } from './layout';
 import { API_URL } from './ports';
 
 // Other tests register manicurists in the same e2e.db, so these tests never hard-code
@@ -9,10 +10,6 @@ const MARIA = 'Мария Петрова';
 
 function carousel(page: Page) {
   return page.getByRole('region', { name: 'Маникюристи' });
-}
-
-async function horizontalOverflow(page: Page) {
-  return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
 /** «Показана 1 от 6» for one card in view, «Показани 1–3 от 6» for more. */
@@ -129,6 +126,11 @@ test('the carousel moves with the arrows and the keyboard, goes round, and fits 
   await page.setViewportSize({ width: 375, height: 812 });
   await expect(counter).toHaveText(shownText(1, 1, count));
   expect(await horizontalOverflow(page)).toBe(0);
+  // At 375px «Следващи» ends on the window's edge, and under the pointer it grows past it
+  // into the clip on purpose (ui-design, Carousel). Measure it at rest: move the pointer
+  // away and wait for the shrink to finish.
+  await page.mouse.move(0, 0);
+  await expect.poll(() => contentOverflow(page)).toBe(0);
 });
 
 test('the map has a marker for every result, and the first card and its marker start active', async ({ page }) => {

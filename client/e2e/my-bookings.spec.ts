@@ -1,5 +1,6 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures';
+import { contentOverflow, horizontalOverflow } from './layout';
 import { API_URL } from './ports';
 
 // The demo client's seed bookings are only read here, never cancelled. Other specs of
@@ -129,10 +130,6 @@ async function myBookings(request: APIRequestContext, token: string): Promise<{ 
   return res.json();
 }
 
-async function horizontalOverflow(page: Page) {
-  return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-}
-
 test('the demo client sees the upcoming week and the past booking, and a booking selects its studio', async ({
   page,
   request,
@@ -181,6 +178,7 @@ test('the demo client sees the upcoming week and the past booking, and a booking
   await expect(pastSection(page).getByRole('button')).toHaveCount(0);
 
   expect(await horizontalOverflow(page)).toBe(0);
+  expect(await contentOverflow(page)).toBe(0);
 });
 
 test('a client cancels an upcoming booking with a reason and it shows as cancelled', async ({
@@ -240,6 +238,7 @@ test('a client cancels an upcoming booking with a reason and it shows as cancell
   await expect(details).toContainText('Причина: Промяна в плановете');
   await expect(details.getByRole('button', { name: 'Отмени часа' })).toHaveCount(0);
   expect(await horizontalOverflow(page)).toBe(0);
+  expect(await contentOverflow(page)).toBe(0);
 });
 
 test('a guest who opens my bookings is sent to login and comes back after it', async ({ page }) => {

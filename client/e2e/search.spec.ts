@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
+import { contentOverflow, horizontalOverflow } from './layout';
 import { API_URL } from './ports';
 
 // Other tests register manicurists in the same e2e.db, so these tests look for
@@ -22,10 +23,6 @@ function hasSearch(params: Record<string, string>) {
     url.pathname === '/' &&
     [...url.searchParams.keys()].length === Object.keys(params).length &&
     Object.entries(params).every(([key, value]) => url.searchParams.get(key) === value);
-}
-
-async function horizontalOverflow(page: Page) {
-  return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
 test('a search by city and service is kept in the URL and after a reload', async ({ page, request }) => {
@@ -101,6 +98,7 @@ test('at 375px the search has no horizontal scroll and works with the keyboard a
   // At 375px one card is in view and Мария Петрова is the fifth.
   await expect(carouselCard(page, 'Мария Петрова')).toBeAttached();
   expect(await horizontalOverflow(page)).toBe(0);
+  expect(await contentOverflow(page)).toBe(0);
 
   const city = page.getByLabel('Град');
   for (let i = 0; i < 10; i++) {
@@ -120,4 +118,5 @@ test('at 375px the search has no horizontal scroll and works with the keyboard a
   await expect(cardTitle(page, 'Габриела Николова')).toBeVisible();
   await expect(cardTitle(page, 'Мария Петрова')).toHaveCount(0);
   expect(await horizontalOverflow(page)).toBe(0);
+  expect(await contentOverflow(page)).toBe(0);
 });

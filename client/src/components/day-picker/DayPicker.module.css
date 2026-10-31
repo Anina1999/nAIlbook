@@ -1,0 +1,35 @@
+@reference "../../index.css";
+
+.picker {
+  @apply flex flex-col gap-4;
+}
+
+/* The day navigation is a white bar like the week navigation (ui-design, Week table),
+   set apart from the sheet by its border. */
+.bar {
+  @apply flex items-center justify-between gap-2 rounded-lg border border-line bg-raised;
+}
+
+/* ink on white: 15.9. Focused after a cancellation. */
+.title {
+  @apply min-w-0 rounded-lg text-center text-lg font-semibold wrap-break-word text-ink;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+/* A quiet icon button inside the bar; the transparent border keeps its size when disabled. */
+.navButton {
+  @apply inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-transparent bg-transparent text-ink;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+  @apply motion-safe:transition-colors motion-safe:duration-150;
+  @apply enabled:hover:bg-accent-soft;
+  @apply disabled:text-muted disabled:bg-surface disabled:border-line disabled:cursor-not-allowed;
+}
+
+.icon {
+  @apply size-5;
+}
+
+/* The full width on a phone, as the day-off date field from sm. */
+.field {
+  @apply min-w-0 sm:w-64;
+}

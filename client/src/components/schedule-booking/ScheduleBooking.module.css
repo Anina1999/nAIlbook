@@ -1,8 +1,14 @@
 @reference "../../index.css";
 
-/* A row of the conflict list; the list draws the lines between rows. */
+/* A row of a booking list; the list draws the lines between rows. */
 .row {
   @apply flex min-w-0 flex-col gap-2 px-4 py-3;
+}
+
+/* A cancelled booking is muted, as on the booking week board (ui-design, Booking button):
+   muted on surface: 5.6; the phone link, accent on surface, stays above 4.5. */
+.cancelledRow {
+  @apply bg-surface text-muted;
 }
 
 /* ink on white: 15.9. */
@@ -33,6 +39,14 @@
 .link {
   @apply inline-flex min-h-11 items-center rounded-lg text-accent hover:text-accent-strong hover:underline;
   @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+.cancelInfo {
+  @apply flex flex-col items-start gap-1;
+}
+
+.reason {
+  @apply wrap-break-word;
 }
 
 /* muted on white: 6.0. */

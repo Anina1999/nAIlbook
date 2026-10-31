@@ -82,7 +82,7 @@ export default function BookingDetails({ booking, onReload }: BookingDetailsProp
       {booking.status === 'CANCELLED' && (
         <div className={styles.cancelInfo}>
           <StatusBadge label="Отменен" />
-          <p>{formatCancelledBy(booking.cancelledBy)}</p>
+          <p>{formatCancelledBy(booking.cancelledBy, 'CLIENT')}</p>
           {booking.cancelReason && <p className={styles.reason}>Причина: {booking.cancelReason}</p>}
         </div>
       )}

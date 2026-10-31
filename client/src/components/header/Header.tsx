@@ -29,9 +29,14 @@ export default function Header() {
           </NavLink>
         )}
         {user.role === 'MANICURIST' && (
-          <NavLink to="/days-off" className={styles.link}>
-            Почивни дни
-          </NavLink>
+          <>
+            <NavLink to="/schedule" className={styles.link}>
+              Моят график
+            </NavLink>
+            <NavLink to="/days-off" className={styles.link}>
+              Почивни дни
+            </NavLink>
+          </>
         )}
         <span className={styles.userName}>{user.name}</span>
         <button type="button" className={styles.outline} onClick={logoutHandler} disabled={loggingOut}>

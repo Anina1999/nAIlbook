@@ -34,7 +34,7 @@ export default function BookingList({ bookings }: BookingListProps) {
           </p>
           {booking.status === 'CANCELLED' && (
             <p className={styles.cancelled}>
-              <StatusBadge label="Отменен" /> {formatCancelledBy(booking.cancelledBy)}
+              <StatusBadge label="Отменен" /> {formatCancelledBy(booking.cancelledBy, 'CLIENT')}
               {booking.cancelReason && <> Причина: {booking.cancelReason}</>}
             </p>
           )}

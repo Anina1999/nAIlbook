@@ -16,7 +16,7 @@ import { useBookingParams } from '../../hooks/useBookingParams';
 import { useBookSlot } from '../../hooks/useBookSlot';
 import { useScrollToHash } from '../../hooks/useScrollToHash';
 import { useWeekSlots, type WeekSlots } from '../../hooks/useWeekSlots';
-import { lastBookableDate, sofiaDateOf, todayInSofia } from '../../utils/dates';
+import { lastBookableDate, sofiaDateOf, todayInSofia, weekOfIso } from '../../utils/dates';
 import { formatDuration, formatLongDate, formatTime } from '../../utils/format';
 import styles from './Manicurist.module.css';
 
@@ -274,6 +274,10 @@ function BookingStep({
               {booked.serviceName}, {formatLongDate(sofiaDateOf(new Date(booked.startAt)))} в{' '}
               {formatTime(booked.startAt)}.
             </p>
+            {/* Opens the week of the new booking, so it is on the board at once. */}
+            <Link to={`/my-bookings?week=${weekOfIso(booked.startAt)}`} className={styles.link}>
+              Вижте моите часове
+            </Link>
           </>
         )}
       </div>

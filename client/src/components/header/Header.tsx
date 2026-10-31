@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, NavLink, useNavigate } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
 import Logo from '../logo/Logo';
 import styles from './Header.module.css';
@@ -22,6 +22,12 @@ export default function Header() {
   } else if (user) {
     menu = (
       <>
+        {/* NavLink marks the link with aria-current="page" while the screen is open. */}
+        {user.role === 'CLIENT' && (
+          <NavLink to="/my-bookings" className={styles.link}>
+            Моите часове
+          </NavLink>
+        )}
         <span className={styles.userName}>{user.name}</span>
         <button type="button" className={styles.outline} onClick={logoutHandler} disabled={loggingOut}>
           {loggingOut ? 'Излизане…' : 'Изход'}

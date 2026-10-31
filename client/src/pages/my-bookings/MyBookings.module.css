@@ -1,0 +1,52 @@
+@reference "../../index.css";
+
+.page {
+  @apply flex flex-col gap-8;
+}
+
+/* Titles in the display font on the sheet (ui-design, Type). */
+.title {
+  @apply font-display text-3xl font-bold text-ink;
+}
+
+.section {
+  @apply flex flex-col gap-4;
+}
+
+.sectionTitle {
+  @apply font-display text-2xl font-bold text-ink;
+}
+
+/* muted on the sheet: 5.8. */
+.note {
+  @apply text-muted;
+}
+
+.upcoming {
+  @apply flex flex-col gap-4;
+}
+
+/* Under the week: the details first on a phone, then the map; from lg the details take
+   one third beside the map. */
+.selection {
+  @apply flex flex-col gap-4 lg:grid lg:grid-cols-3 lg:items-start;
+}
+
+.details {
+  @apply min-w-0;
+}
+
+/* The studio map on the sheet (ui-design, Studio map): 300px on a phone, 400px from
+   sm. The rounded clip holds Leaflet's tiles. */
+.mapFrame {
+  @apply h-75 overflow-hidden rounded-card border border-line sm:h-100 lg:col-span-2;
+}
+
+.empty {
+  @apply flex flex-col items-center gap-2 py-8 text-center;
+}
+
+.link {
+  @apply inline-flex min-h-11 items-center rounded-lg text-accent hover:text-accent-strong hover:underline;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}

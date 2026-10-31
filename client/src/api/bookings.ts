@@ -17,7 +17,22 @@ export type Booking = {
   serviceName: string;
   priceCents: number;
   client: { id: number; name: string; phone: string };
-  manicurist: { id: number; name: string; phone: string; city: string; address: string };
+  /** `latitude` and `longitude` are the studio coordinates, for the map. */
+  manicurist: {
+    id: number;
+    name: string;
+    phone: string;
+    city: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+  };
+};
+
+/** The client's own bookings: upcoming until they end, soonest first; past latest first. Cancelled ones included. */
+export type MyBookings = {
+  upcoming: Booking[];
+  past: Booking[];
 };
 
 export type BookingInput = {
@@ -30,4 +45,14 @@ export type BookingInput = {
 /** Books a slot. A submit, so it takes no signal and is never aborted. */
 export function createBooking(input: BookingInput): Promise<{ booking: Booking }> {
   return request<{ booking: Booking }>('/bookings', { method: 'POST', body: input });
+}
+
+/** The logged-in client's bookings. A load, so it takes the signal. */
+export function getMyBookings(signal?: AbortSignal): Promise<MyBookings> {
+  return request<MyBookings>('/bookings/mine', { signal });
+}
+
+/** Cancels a booking with a reason, sent as typed. A submit, so it takes no signal and is never aborted. */
+export function cancelBooking(id: number, reason: string): Promise<{ booking: Booking }> {
+  return request<{ booking: Booking }>(`/bookings/${id}/cancel`, { method: 'PATCH', body: { reason } });
 }

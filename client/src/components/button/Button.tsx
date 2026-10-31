@@ -1,9 +1,9 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ComponentProps } from 'react';
 import styles from './Button.module.css';
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  /** `search` is the primary button on the night's glass search panel. */
-  variant?: 'primary' | 'secondary' | 'search';
+type ButtonProps = ComponentProps<'button'> & {
+  /** `search` is the primary button on the night's glass search panel; `danger` and `dangerSolid` are destructive (the solid one confirms). */
+  variant?: 'primary' | 'secondary' | 'search' | 'danger' | 'dangerSolid';
 };
 
 export default function Button({ variant = 'primary', type = 'button', className, ...rest }: ButtonProps) {

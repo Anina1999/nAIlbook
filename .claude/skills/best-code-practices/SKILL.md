@@ -51,6 +51,7 @@ A component file ends up mostly JSX: it reads hooks, calls handlers and renders.
 - **Every form is controlled.** The values live in React state through `useForm`, each input has a `name`, `value={values.name}` and `onChange={changeHandler}`.
 - **`submitHandler` calls `event.preventDefault()`**, so the page never reloads, and `useForm`'s `pending` blocks a second submit while the first one runs (the button is `disabled` and names the action: «Запазване…»).
 - **The server validates.** Forms have `noValidate` and send every visible field as a string; field errors from `VALIDATION_ERROR` go under their inputs (`ui-conventions`, *Errors*). The client does not repeat the server's rules.
+- **An inline form that replaces the button that opens it** (the cancel form on `/my-bookings`) moves the focus, so the keyboard never falls back to the page's start: its field takes the focus when it appears (`autoFocus`); «Назад» closes it inside `flushSync` and then focuses the opening button (a `ref`), which exists again only after that render; after a success the focus goes to the panel's heading (`tabIndex={-1}`), where the confirmation is announced.
 - **A search form is not a submit:** it only changes the URL, so it has no `pending` and its button stays enabled (`ui-design`, *States*).
 
 ## 6. Contexts

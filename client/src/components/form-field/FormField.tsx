@@ -15,6 +15,10 @@ type FormFieldProps = {
   multiline?: boolean;
   /** Marks the field as required: ` *` after the label and `aria-required` on the control. */
   required?: boolean;
+  /** Limits the length and shows a counter «11/200» under the field, linked with `aria-describedby`. */
+  maxLength?: number;
+  /** Focuses the control when it appears (a form opened by a button that it replaces). */
+  autoFocus?: boolean;
   /** `glass` is the field on the night's glass search panel: a white label with a shadow, a 44px input. */
   variant?: 'sheet' | 'glass';
 };
@@ -30,11 +34,15 @@ export default function FormField({
   placeholder,
   multiline = false,
   required = false,
+  maxLength,
+  autoFocus,
   variant = 'sheet',
 }: FormFieldProps) {
   const id = useId();
   const errorId = `${id}-error`;
+  const countId = `${id}-count`;
   const glass = variant === 'glass';
+  const describedBy = [error && errorId, maxLength !== undefined && countId].filter(Boolean).join(' ');
   const shared = {
     id,
     name,
@@ -42,9 +50,11 @@ export default function FormField({
     onChange,
     autoComplete,
     placeholder,
+    maxLength,
+    autoFocus,
     'aria-required': required ? true : undefined,
     'aria-invalid': error ? true : undefined,
-    'aria-describedby': error ? errorId : undefined,
+    'aria-describedby': describedBy || undefined,
   };
   const inputClass = [styles.input, glass && styles.glassInput].filter(Boolean).join(' ');
 
@@ -52,7 +62,11 @@ export default function FormField({
     <div className={[styles.field, glass && styles.glassField].filter(Boolean).join(' ')}>
       <label htmlFor={id} className={[styles.label, glass && styles.glassLabel].filter(Boolean).join(' ')}>
         {label}
-        {required && <span aria-hidden="true">{' *'}</span>}
+        {required && (
+          <span aria-hidden="true" className={styles.requiredMark}>
+            {' *'}
+          </span>
+        )}
       </label>
       {multiline ? (
         <textarea {...shared} rows={4} className={`${inputClass} ${styles.textarea}`} />
@@ -62,6 +76,11 @@ export default function FormField({
       {error && (
         <p id={errorId} className={styles.error}>
           {error}
+        </p>
+      )}
+      {maxLength !== undefined && (
+        <p id={countId} className={styles.count}>
+          {value.length}/{maxLength}
         </p>
       )}
     </div>

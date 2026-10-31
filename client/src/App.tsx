@@ -1,11 +1,13 @@
 import { Route, Routes } from 'react-router';
 import GuestGuard from './components/guards/GuestGuard';
+import RoleGuard from './components/guards/RoleGuard';
 import Layout from './components/layout/Layout';
 import AuthProvider from './contexts/AuthProvider';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Home from './pages/home/Home';
 import ManicuristPage from './pages/manicurist/Manicurist';
+import MyBookings from './pages/my-bookings/MyBookings';
 
 export default function App() {
   return (
@@ -17,6 +19,9 @@ export default function App() {
           <Route element={<GuestGuard />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+          </Route>
+          <Route element={<RoleGuard roles={['CLIENT']} />}>
+            <Route path="/my-bookings" element={<MyBookings />} />
           </Route>
         </Route>
       </Routes>

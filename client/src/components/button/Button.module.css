@@ -22,3 +22,14 @@
   @apply min-h-11 shrink-0 rounded-control border border-transparent bg-accent px-8 text-base font-semibold text-white enabled:hover:bg-accent-strong;
   @apply focus-visible:outline-white;
 }
+
+/* Destructive actions only (ui-design, Tokens): «Отмени часа». danger on white: 6.6,
+   on danger-soft (hover): 5.7. */
+.danger {
+  @apply bg-raised text-danger border border-danger font-semibold enabled:hover:bg-danger-soft;
+}
+
+/* The destructive button that confirms the action: «Потвърди отмяната». white on danger: 6.6, at 90% on the sheet (hover): 5.9. */
+.dangerSolid {
+  @apply bg-danger text-white border border-transparent font-semibold enabled:hover:bg-danger/90;
+}

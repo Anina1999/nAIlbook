@@ -384,6 +384,15 @@ describe('POST /api/me/days-off', () => {
         serviceName: 'Класически маникюр',
         client: { id: client.id, name: client.name, phone: client.phone },
       });
+      expect(bookings[0].manicurist).toEqual({
+        id: manicurist.id,
+        name: manicurist.name,
+        phone: manicurist.phone,
+        city: manicurist.profile!.city,
+        address: manicurist.profile!.address,
+        latitude: manicurist.profile!.latitude,
+        longitude: manicurist.profile!.longitude,
+      });
       expect(bookings[0].client).not.toHaveProperty('email');
       expect(await prisma.dayOff.count()).toBe(0);
     });

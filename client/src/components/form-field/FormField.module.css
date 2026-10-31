@@ -8,6 +8,11 @@
   @apply font-semibold;
 }
 
+/* The ` *` of a required field. danger on the sheet: 6.2. */
+.requiredMark {
+  @apply text-danger;
+}
+
 /* muted on white: 6.0, so an example in the field stays readable. */
 .input {
   @apply w-full bg-raised text-ink text-base border border-field rounded-lg min-h-11 px-3 placeholder:text-muted;
@@ -41,4 +46,9 @@
 .glassInput {
   @apply min-h-11 rounded-control border-field-soft px-4 text-input-ink;
   @apply focus-visible:outline-white;
+}
+
+/* The length counter «11/200» of a field with a limit. muted on the sheet: 5.8. */
+.count {
+  @apply self-end text-sm text-muted tabular-nums;
 }

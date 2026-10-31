@@ -240,8 +240,20 @@ describe('POST /api/bookings', () => {
         phone: manicurist.phone,
         city: manicurist.profile!.city,
         address: manicurist.profile!.address,
+        latitude: manicurist.profile!.latitude,
+        longitude: manicurist.profile!.longitude,
       },
     });
+    // The contract's key order for the nested manicurist.
+    expect(Object.keys(res.body.booking.manicurist)).toEqual([
+      'id',
+      'name',
+      'phone',
+      'city',
+      'address',
+      'latitude',
+      'longitude',
+    ]);
     const saved = await prisma.booking.findUniqueOrThrow({ where: { id: res.body.booking.id } });
     expect(saved).toMatchObject({ clientId: client.id, manicuristId: manicurist.id, serviceId: service.id });
   });
@@ -464,6 +476,26 @@ describe('GET /api/bookings/mine', () => {
     expect(res.body.past).toEqual([]);
   });
 
+  it("returns the manicurist's studio latitude and longitude on the booking", async () => {
+    const client = await createClient();
+    const manicurist = await createManicurist({ city: 'Варна', latitude: 43.2141, longitude: 27.9147 });
+    await createBooking(client, manicurist, { startAt: new Date(slotAt(nextWeekday(MONDAY), '10:00')) });
+
+    const res = await mine(client);
+
+    expect(res.status).toBe(200);
+    expect(res.body.upcoming).toHaveLength(1);
+    expect(res.body.upcoming[0].manicurist).toEqual({
+      id: manicurist.id,
+      name: manicurist.name,
+      phone: manicurist.phone,
+      city: 'Варна',
+      address: manicurist.profile!.address,
+      latitude: 43.2141,
+      longitude: 27.9147,
+    });
+  });
+
   it('returns 401 without a token', async () => {
     const res = await mine(null);
 
@@ -510,6 +542,27 @@ describe('GET /api/bookings/schedule', () => {
       cancelledBy: 'CLIENT',
       cancelReason: 'Разболях се.',
       client: { id: client.id, name: client.name, phone: client.phone },
+    });
+  });
+
+  it("returns the manicurist's studio latitude and longitude on the booking", async () => {
+    const client = await createClient();
+    const manicurist = await createManicurist({ city: 'Пловдив', latitude: 42.1354, longitude: 24.7453 });
+    const date = nextWeekday(MONDAY);
+    await createBooking(client, manicurist, { startAt: new Date(slotAt(date, '10:00')) });
+
+    const res = await schedule(manicurist, { date });
+
+    expect(res.status).toBe(200);
+    expect(res.body.bookings).toHaveLength(1);
+    expect(res.body.bookings[0].manicurist).toEqual({
+      id: manicurist.id,
+      name: manicurist.name,
+      phone: manicurist.phone,
+      city: 'Пловдив',
+      address: manicurist.profile!.address,
+      latitude: 42.1354,
+      longitude: 24.7453,
     });
   });
 

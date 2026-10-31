@@ -14,15 +14,28 @@ export const bookingSelect = {
   serviceName: true,
   priceCents: true,
   client: { select: { id: true, name: true, phone: true } },
-  manicurist: { select: { city: true, address: true, user: { select: { id: true, name: true, phone: true } } } },
+  manicurist: {
+    select: {
+      city: true,
+      address: true,
+      latitude: true,
+      longitude: true,
+      user: { select: { id: true, name: true, phone: true } },
+    },
+  },
 } satisfies Prisma.BookingSelect;
 
 type BookingRow = Prisma.BookingGetPayload<{ select: typeof bookingSelect }>;
 
 // The booking object of the API contract (api-conventions, Response shapes).
+// The manicurist keys are written out, so their order is the contract's:
+// id, name, phone, city, address, latitude, longitude.
 export function toBooking({ manicurist, ...booking }: BookingRow) {
-  const { user, ...profile } = manicurist;
-  return { ...booking, manicurist: { ...user, ...profile } };
+  const { user, city, address, latitude, longitude } = manicurist;
+  return {
+    ...booking,
+    manicurist: { id: user.id, name: user.name, phone: user.phone, city, address, latitude, longitude },
+  };
 }
 
 export type PublicBooking = ReturnType<typeof toBooking>;

@@ -35,7 +35,7 @@ Rules:
 - **Links on the night are `blush`** (white on hover), never `petal` (3.35:1 there); `petal` is only the bottle's collar in the logo.
 - **The focus outline on the night is white** (`focus-visible:outline-white`): `accent` is below 3:1 against the backdrop and the glass panel. On the sheets and on the iridescent cards it stays `accent`.
 - `danger` is only for errors and destructive actions (cancel a booking, remove a day off). `accent` never marks an error.
-- Colour never carries meaning alone. A status also has a word: «Отказан», «Предстоящ».
+- Colour never carries meaning alone. A status also has a word: «Отменен», «Предстоящ».
 - A new token is added here first, with its contrast checked.
 
 ## Where styles live

@@ -15,6 +15,7 @@
   --color-accent: #A3195B;        /* primary buttons, selected slot and date, links */
   --color-accent-strong: #82124A; /* hover and active state of accent */
   --color-accent-soft: #F6E3EC;   /* current day, selected row, badges */
+  --color-map-ground: #F2EFE9;    /* the land colour of the OSM tiles, under them while they load */
   --color-danger: #B42318;        /* errors, destructive actions */
   --color-danger-soft: #FDECEA;   /* background of error boxes */
   --color-success: #1F7A4D;       /* confirmations */
@@ -128,6 +129,7 @@
   --radius-control: 10px;         /* buttons and inputs on the night, «Запази час» */
   --radius-card: 16px;            /* the iridescent card */
   --radius-panel: 18px;           /* the glass search panel */
+  --radius-map: 20px;             /* the studio map on the night */
 
   /* --- The shadow under copy text on the night --- */
   --text-shadow-copy:

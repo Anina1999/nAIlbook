@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import type { User } from '../../api/auth';
 import { ApiError } from '../../api/client';
@@ -8,6 +8,7 @@ import ErrorMessage from '../../components/error-message/ErrorMessage';
 import Loader from '../../components/loader/Loader';
 import Price from '../../components/price/Price';
 import Sheet from '../../components/sheet/Sheet';
+import StudioMap from '../../components/studio-map/StudioMap';
 import WeekSchedule from '../../components/week-schedule/WeekSchedule';
 import { useAsync, type AsyncState } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -46,6 +47,8 @@ export default function ManicuristPage() {
     [manicuristId],
   );
   const manicurist = profile.data?.manicurist ?? null;
+  // One marker, the same array while the profile stays, so the map does not redraw it.
+  const studio = useMemo(() => (manicurist ? [manicurist] : []), [manicurist]);
 
   // The bookable window, today to the 12-month limit, both in Sofia.
   const today = todayInSofia();
@@ -99,6 +102,10 @@ export default function ManicuristPage() {
           <p className={styles.place}>
             {manicurist.city}, {manicurist.address}
           </p>
+          {/* The studio right under its address: one marker, a picture with no action. */}
+          <div className={styles.mapFrame}>
+            <StudioMap markers={studio} activeId={manicurist.id} label="Карта на студиото" />
+          </div>
           <dl className={styles.contacts}>
             <div className={styles.contact}>
               <dt className={styles.contactLabel}>Имейл</dt>

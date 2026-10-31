@@ -8,11 +8,16 @@ export type ServiceSummary = {
   priceCents: number;
 };
 
-/** One search result: a manicurist with their active services, sorted by name. */
+/**
+ * One search result: a manicurist with their active services, sorted by name.
+ * `latitude` and `longitude` are the studio's coordinates, found by the server from the address.
+ */
 export type ManicuristSummary = {
   id: number;
   name: string;
   city: string;
+  latitude: number;
+  longitude: number;
   imageUrl: string | null;
   services: ServiceSummary[];
 };
@@ -42,7 +47,10 @@ export type WorkingHours = {
   endMin: number;
 };
 
-/** The public profile: active services by name, working hours by weekday. `phone` is "" when there is none. */
+/**
+ * The public profile: active services by name, working hours by weekday. `phone` is "" when
+ * there is none; `latitude` and `longitude` are the studio's coordinates.
+ */
 export type Manicurist = {
   id: number;
   name: string;
@@ -50,6 +58,8 @@ export type Manicurist = {
   phone: string;
   city: string;
   address: string;
+  latitude: number;
+  longitude: number;
   bio: string;
   imageUrl: string | null;
   services: Service[];

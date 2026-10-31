@@ -1,0 +1,138 @@
+@reference "../../index.css";
+
+/* The Leaflet container (ui-design, Studio map). It fills the frame the page gives it,
+   which sets the height, the radius and the border. `isolation` keeps Leaflet's panes
+   (z-index 400–1000) under the header and the carousel arrows. The focus outline sits
+   inside, so the frame's rounded clip does not cut it; accent on the light tiles. */
+/* The map and the wheel hint over it, in one stacking context. */
+.wrap {
+  @apply relative h-full w-full;
+  isolation: isolate;
+}
+
+.map {
+  @apply h-full w-full;
+  isolation: isolate;
+}
+
+/* «Задръжте Ctrl…», centred over the map for a moment after a turn of the wheel without
+   Ctrl. White on ink at 80% over the light tiles: above 10:1. */
+.wheelHint {
+  @apply pointer-events-none absolute top-1/2 left-1/2 z-10 max-w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2;
+  @apply rounded-control px-4 py-2 text-center text-sm font-medium text-white opacity-0;
+  background-color: color-mix(in srgb, var(--color-ink) 80%, transparent);
+}
+
+.wheelHintShown {
+  @apply opacity-100;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .wheelHint {
+    transition: opacity 200ms ease;
+  }
+}
+
+/* The land colour of the OpenStreetMap tiles under them, instead of Leaflet's grey, so the
+   map never flashes grey while the tiles of a new zoom load. Two classes win over leaflet.css. */
+.map:global(.leaflet-container) {
+  background: var(--color-map-ground);
+}
+
+/* «Всички студиа» and the zoom buttons: frosted glass over the map, white on hover. */
+/* Three classes, so the border wins over leaflet.css (`.leaflet-touch .leaflet-bar`). */
+.map:global(.leaflet-container) :global(.leaflet-bar) {
+  border-color: color-mix(in srgb, var(--color-white) 60%, transparent);
+}
+
+.map :global(.leaflet-bar a),
+.overviewButton {
+  background-color: color-mix(in srgb, var(--color-white) 65%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.map :global(.leaflet-bar a:hover),
+.overviewButton:hover {
+  background-color: color-mix(in srgb, var(--color-white) 92%, transparent);
+}
+
+.map:focus-visible {
+  @apply outline-2 -outline-offset-4 outline-accent;
+}
+
+/* Leaflet's own light zoom buttons, at 44×44px. Three classes, so they win over
+   leaflet.css (`.leaflet-touch .leaflet-bar a`) whatever the order of the stylesheets. */
+.map :global(.leaflet-control-zoom.leaflet-bar a) {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+/* «Всички студиа» above the zoom buttons, in the same glass bar look, 44px high. */
+.overview {
+  @apply overflow-hidden;
+}
+
+.overviewButton {
+  @apply block h-11 cursor-pointer px-3 text-sm font-semibold text-ink;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+/* The marker's 44×44px target, with the dot centred in it. */
+.marker {
+  @apply flex items-center justify-center rounded-full;
+}
+
+.selectable {
+  @apply cursor-pointer;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent;
+}
+
+/* The dot is drawn at the active size (32px) and scaled down, so a size change is only a
+   transform. Its border, ring and shadow are divided by the scale, so they keep their
+   size on screen: a 22px accent dot with a 4px white border. accent and plum on the
+   light tiles are above 3:1 for a graphic; the white border keeps it visible on dark tiles. */
+.dot {
+  --scale: calc(22 / 32);
+  @apply flex size-8 items-center justify-center rounded-full border-solid border-white bg-accent;
+  border-width: calc(4px / var(--scale));
+  box-shadow: 0 calc(4px / var(--scale)) calc(10px / var(--scale))
+    color-mix(in srgb, var(--color-accent-strong) 30%, transparent);
+  transform: scale(var(--scale));
+}
+
+/* Highlighted (hover or focus on its card, hover or focus on the marker): 26px and a 3px candy ring. */
+.highlighted .dot,
+.selectable:not(.active):hover .dot,
+.selectable:not(.active):focus-visible .dot {
+  --scale: calc(26 / 32);
+  box-shadow:
+    0 0 0 calc(3px / var(--scale)) var(--color-candy),
+    0 calc(4px / var(--scale)) calc(10px / var(--scale))
+      color-mix(in srgb, var(--color-accent-strong) 30%, transparent);
+}
+
+/* Active: 32px plum with the star, a 3px candy ring and a soft glow-candy halo. */
+.active .dot {
+  --scale: 1;
+  @apply bg-plum;
+  box-shadow:
+    0 0 0 3px var(--color-candy),
+    0 0 18px 4px color-mix(in srgb, var(--color-glow-candy) 70%, transparent);
+}
+
+.star {
+  @apply hidden;
+  fill: var(--color-white);
+}
+
+.active .star {
+  @apply block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dot {
+    transition: transform 150ms ease;
+  }
+}

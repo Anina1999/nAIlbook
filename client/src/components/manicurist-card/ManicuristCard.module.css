@@ -27,9 +27,10 @@
     0 0 50px color-mix(in srgb, var(--color-glow-pink) 18%, transparent);
 }
 
-/* Hover and keyboard focus look the same: a brighter glow, and a 4px lift when motion is allowed. */
+/* Hover and keyboard focus look the same: a brighter glow, and a 4px lift when motion is allowed.
+   :focus-visible, not :focus-within, so after a mouse click only the active look stays. */
 .card:hover,
-.card:focus-within {
+.card:has(:focus-visible) {
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--color-white) 90%, transparent),
     inset 0 0 28px color-mix(in srgb, var(--color-white) 35%, transparent),
@@ -86,7 +87,7 @@
   }
 
   .card:hover,
-  .card:focus-within {
+  .card:has(:focus-visible) {
     transform: translateY(-4px);
   }
 
@@ -131,13 +132,17 @@
     0 2px 8px color-mix(in srgb, var(--color-glow-candy) 45%, transparent);
 }
 
-.link {
-  @apply rounded-lg text-card-title no-underline;
-  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+/* The name as a button that looks exactly like the heading text: no fill, border or
+   underline (preflight already clears them and inherits the font). Its keyboard focus shows
+   as the card's :has(:focus-visible) look (a candy ring and the lift); `outline-hidden` still
+   draws an outline in forced-colours mode. */
+.select {
+  @apply cursor-pointer text-left text-card-title;
+  @apply focus-visible:outline-hidden;
 }
 
-/* Stretches the link over the card, so a click anywhere on it opens the page. */
-.link::after {
+/* Stretches the button over the card, so a click anywhere on it makes the card active. */
+.select::after {
   content: '';
   @apply absolute inset-0 rounded-card;
 }

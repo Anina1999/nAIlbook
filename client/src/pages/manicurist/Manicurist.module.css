@@ -17,6 +17,12 @@
   @apply text-muted wrap-break-word;
 }
 
+/* The studio map on the sheet (ui-design, Studio map): 200px on a phone, 240px from `sm`.
+   The rounded clip holds Leaflet's tiles. */
+.mapFrame {
+  @apply my-2 h-50 overflow-hidden rounded-card border border-line sm:h-60;
+}
+
 .contacts {
   @apply flex flex-col;
 }

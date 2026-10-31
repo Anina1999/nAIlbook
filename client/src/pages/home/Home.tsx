@@ -2,8 +2,8 @@ import { useId } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { searchManicurists, type ManicuristSummary } from '../../api/manicurists';
 import ErrorMessage from '../../components/error-message/ErrorMessage';
-import ManicuristCarousel from '../../components/manicurist-carousel/ManicuristCarousel';
 import SearchForm, { type SearchValues } from '../../components/search-form/SearchForm';
+import SearchResults from '../../components/search-results/SearchResults';
 import { useAsync } from '../../hooks/useAsync';
 import styles from './Home.module.css';
 
@@ -46,11 +46,7 @@ export default function Home() {
     if (next.toString() !== searchParams.toString()) setSearchParams(next);
   };
 
-  const heading = (
-    <h2 id={resultsTitleId} className={`${styles.silver} ${styles.sectionTitle}`}>
-      Маникюристи
-    </h2>
-  );
+  const sectionTitle = `${styles.silver} ${styles.sectionTitle}`;
 
   return (
     <div className={styles.page}>
@@ -72,37 +68,38 @@ export default function Home() {
         <SearchForm key={`${city}\n${service}`} initialValues={{ city, service }} onSearch={searchHandler} />
       </section>
 
-      <section aria-labelledby={resultsTitleId} className={styles.results}>
-        {result && result.manicurists.length > 0 ? (
-          // The key from the search on screen: a new result starts again at the first card.
-          <ManicuristCarousel
-            key={`${result.city}\n${result.service}`}
-            heading={heading}
-            manicurists={result.manicurists}
-            loading={loading}
-          />
-        ) : (
-          <>
-            <div className={styles.resultsHead}>
-              {heading}
-              {/* Always rendered with a fixed height, so «Зареждане…» does not move the content. */}
-              <p role="status" className={styles.status}>
-                {loading ? 'Зареждане…' : ''}
-              </p>
+      {result && result.manicurists.length > 0 ? (
+        // The key from the search on screen: a new result starts again at the first card
+        // and its marker, the view and the active card together.
+        <SearchResults
+          key={`${result.city}\n${result.service}`}
+          manicurists={result.manicurists}
+          loading={loading}
+          titleClassName={sectionTitle}
+        />
+      ) : (
+        <section aria-labelledby={resultsTitleId} className={styles.results}>
+          <div className={styles.resultsHead}>
+            <h2 id={resultsTitleId} className={sectionTitle}>
+              Маникюристи
+            </h2>
+            {/* Always rendered with a fixed height, so «Зареждане…» does not move the content. */}
+            <p role="status" className={styles.status}>
+              {loading ? 'Зареждане…' : ''}
+            </p>
+          </div>
+          {result && (
+            <div className={styles.empty} aria-busy={loading}>
+              <p>{emptyMessage(result)}</p>
+              {(result.city || result.service) && (
+                <Link to="/" className={styles.clearLink}>
+                  Изчистете търсенето
+                </Link>
+              )}
             </div>
-            {result && (
-              <div className={styles.empty} aria-busy={loading}>
-                <p>{emptyMessage(result)}</p>
-                {(result.city || result.service) && (
-                  <Link to="/" className={styles.clearLink}>
-                    Изчистете търсенето
-                  </Link>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </section>
+          )}
+        </section>
+      )}
     </div>
   );
 }

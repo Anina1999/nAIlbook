@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { API_URL } from './ports';
 
 // Other tests register manicurists in the same e2e.db, so these tests never hard-code
@@ -18,6 +19,52 @@ async function horizontalOverflow(page: Page) {
 function shownText(start: number, perView: number, total: number): string {
   const end = Math.min(start + perView - 1, total);
   return start === end ? `Показана ${start} от ${total}` : `Показани ${start}–${end} от ${total}`;
+}
+
+/** Waits for the first view and reads the number of results and of cards in view from the counter. */
+async function readCounter(page: Page): Promise<{ total: number; perView: number }> {
+  const counter = carousel(page).getByRole('status');
+  await expect(counter).toHaveText(/^Показан[аи] 1(–\d+)? от \d+$/);
+  const [, last, total] = (await counter.textContent())!.match(/^Показан[аи] 1(?:–(\d+))? от (\d+)$/)!;
+  return { total: Number(total), perView: last ? Number(last) : 1 };
+}
+
+/** The names on the cards, in the carousel's order (also the slides out of view). */
+function cardNames(page: Page): Promise<string[]> {
+  return carousel(page).getByRole('heading', { level: 3 }).allTextContents();
+}
+
+/** The card's name: a button stretched over the card, pressed on the active card. */
+function cardButton(page: Page, name: string) {
+  return carousel(page).getByRole('button', { name, exact: true });
+}
+
+function cardOf(page: Page, name: string) {
+  // The inner locator is matched inside each article, so it starts from the page, not the region.
+  return carousel(page)
+    .getByRole('article')
+    .filter({ has: page.getByRole('button', { name, exact: true }) });
+}
+
+function mapSection(page: Page) {
+  return page.getByRole('region', { name: 'Студиа на картата' });
+}
+
+/** Every marker on the map: buttons named «<име> на картата». */
+function markers(page: Page) {
+  return mapSection(page).getByRole('button', { name: / на картата$/ });
+}
+
+function marker(page: Page, name: string) {
+  return mapSection(page).getByRole('button', { name: `${name} на картата`, exact: true });
+}
+
+/** Asserts that `name` is the active card and its marker the active marker, and that `other` is not. */
+async function expectActive(page: Page, name: string, other: string) {
+  await expect(cardButton(page, name)).toHaveAttribute('aria-pressed', 'true');
+  await expect(marker(page, name)).toHaveAttribute('aria-pressed', 'true');
+  await expect(cardButton(page, other)).toHaveAttribute('aria-pressed', 'false');
+  await expect(marker(page, other)).toHaveAttribute('aria-pressed', 'false');
 }
 
 test('«Запази час» on a card opens the manicurist at the free times, with the focus on them', async ({ page }) => {
@@ -82,4 +129,139 @@ test('the carousel moves with the arrows and the keyboard, goes round, and fits 
   await page.setViewportSize({ width: 375, height: 812 });
   await expect(counter).toHaveText(shownText(1, 1, count));
   expect(await horizontalOverflow(page)).toBe(0);
+});
+
+test('the map has a marker for every result, and the first card and its marker start active', async ({ page }) => {
+  await page.goto('/');
+  const { total } = await readCounter(page);
+  const names = await cardNames(page);
+  expect(names).toHaveLength(total);
+
+  await expect(markers(page)).toHaveCount(total);
+  for (const name of names) await expect(marker(page, name)).toHaveCount(1);
+  await expectActive(page, names[0], names[1]);
+});
+
+test('a click on a card makes it and its marker active, and the URL stays the same', async ({ page }) => {
+  // A click can change the active card only while more than one card is in view: with one,
+  // the card in view is always the active one.
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const service = 'Гел лак';
+  const res = await page.request.get(`${API_URL}/manicurists?service=${encodeURIComponent(service)}`);
+  const { manicurists } = (await res.json()) as { manicurists: { name: string; city: string }[] };
+  expect(manicurists.length).toBeGreaterThan(1);
+  const [first, second] = manicurists;
+
+  await page.goto('/');
+  await page.getByLabel('Услуга').fill(service);
+  await page.getByRole('button', { name: 'Търсене' }).click();
+  const onSearch = (url: URL) =>
+    url.pathname === '/' && [...url.searchParams.keys()].join() === 'service' && url.searchParams.get('service') === service;
+  await expect(page).toHaveURL(onSearch);
+  await expect(cardButton(page, second.name)).toBeVisible();
+  await expectActive(page, first.name, second.name);
+
+  // The name button is stretched over the card, so a real click on the city text selects it.
+  // A mouse click at the city's position, because the button covers the text on purpose.
+  const city = cardOf(page, second.name).getByText(second.city, { exact: true });
+  await city.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  const box = await city.boundingBox();
+  expect(box).not.toBeNull();
+  await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+
+  await expectActive(page, second.name, first.name);
+  await expect(page).toHaveURL(onSearch);
+});
+
+test('choosing the marker of a card out of view makes that card active and brings it into view', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const { total, perView } = await readCounter(page);
+  expect(total).toBeGreaterThan(perView);
+  const names = await cardNames(page);
+  const lastName = names[names.length - 1];
+
+  // Focus and Enter, not a mouse click: two studios in one city overlap at the zoom that
+  // shows the whole country, so a click could land on the other one.
+  const lastMarker = marker(page, lastName);
+  await lastMarker.focus();
+  await page.keyboard.press('Enter');
+
+  await expectActive(page, lastName, names[0]);
+  await expect(lastMarker).toBeFocused();
+  // The view ends at the last card now; the counter says so too.
+  await expect(carousel(page).getByRole('status')).toHaveText(shownText(total - perView + 1, perView, total));
+  await carousel(page).scrollIntoViewIfNeeded();
+  await expect(cardOf(page, lastName)).toBeInViewport({ ratio: 0.9 });
+});
+
+test('«Следващи» makes the second card and its marker active', async ({ page }) => {
+  await page.goto('/');
+  const { total, perView } = await readCounter(page);
+  expect(total).toBeGreaterThan(perView);
+  const names = await cardNames(page);
+
+  await carousel(page).getByRole('button', { name: 'Следващи' }).click();
+
+  await expect(carousel(page).getByRole('status')).toHaveText(shownText(2, perView, total));
+  await expectActive(page, names[1], names[0]);
+});
+
+test('a new search starts with its first card and marker active', async ({ page }) => {
+  const city = 'София';
+  const res = await page.request.get(`${API_URL}/manicurists?city=${encodeURIComponent(city)}`);
+  const { manicurists } = (await res.json()) as { manicurists: { name: string }[] };
+  expect(manicurists.length).toBeGreaterThan(1);
+  const [first, second] = manicurists;
+
+  await page.goto('/');
+  const { total, perView } = await readCounter(page);
+  expect(total).toBeGreaterThan(perView);
+  const names = await cardNames(page);
+  await carousel(page).getByRole('button', { name: 'Следващи' }).click();
+  await expectActive(page, names[1], names[0]);
+
+  await page.getByLabel('Град').fill(city);
+  await page.getByRole('button', { name: 'Търсене' }).click();
+  await expect(page).toHaveURL((url) => url.searchParams.get('city') === city);
+
+  await expect(carousel(page).getByRole('article')).toHaveCount(manicurists.length);
+  await expect(markers(page)).toHaveCount(manicurists.length);
+  await expect(carousel(page).getByRole('status')).toHaveText(/^Показан[аи] 1(–\d+)? от \d+$/);
+  await expectActive(page, first.name, second.name);
+});
+
+test('choosing a studio flies the map to its street, and «Всички студиа» shows every studio again', async ({
+  page,
+}) => {
+  // The flight is instant under reduced motion; the test checks where the map lands.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const res = await page.request.get(`${API_URL}/manicurists`);
+  const { manicurists } = (await res.json()) as {
+    manicurists: { name: string; latitude: number; longitude: number }[];
+  };
+  const [first] = manicurists;
+  // A studio far from the first one (another city), off the map once it shows the first one's street.
+  const far = manicurists.find(
+    (m) => Math.abs(m.latitude - first.latitude) + Math.abs(m.longitude - first.longitude) > 0.5,
+  );
+  expect(far).toBeDefined();
+
+  await page.goto('/');
+  await readCounter(page);
+  // At the start the map shows every studio, the first card already active.
+  await mapSection(page).scrollIntoViewIfNeeded();
+  await expect(marker(page, first.name)).toBeInViewport();
+  await expect(marker(page, far!.name)).toBeInViewport();
+
+  // Choosing the active card again still flies the map to it.
+  await cardButton(page, first.name).click();
+  await mapSection(page).scrollIntoViewIfNeeded();
+  await expect(marker(page, first.name)).toBeInViewport();
+  await expect(marker(page, far!.name)).not.toBeInViewport();
+
+  await mapSection(page).getByRole('button', { name: 'Всички студиа' }).click();
+  await expect(marker(page, far!.name)).toBeInViewport();
+  await expect(marker(page, first.name)).toBeInViewport();
 });

@@ -70,7 +70,9 @@ async function registerManicurist(request: APIRequestContext, testInfo: TestInfo
   const res = await request.post(`${API_URL}/auth/register`, {
     data: {
       role: 'MANICURIST',
-      name: 'Деница Тестова',
+      // A unique name too: a manicurist with a service shows on `/`, where home.spec.ts
+      // finds the cards and markers by name.
+      name: `Деница Тестова ${testInfo.project.name} ${Date.now()}`,
       email: uniqueEmail('manicurist', testInfo),
       password: PASSWORD,
       city: 'София',

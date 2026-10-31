@@ -49,7 +49,7 @@ npm run dev              # starts the server (:3000) and the client (:5173) toge
 npm test                 # runs all tests (server Vitest)
 npx vitest run tests/api/auth        # in server/; one test file
 npx vitest run -t "duplicate email"  # in server/; tests whose name matches
-npm run e2e              # Playwright E2E; starts its own server (:3100) and client (:5180) on e2e.db
+npm run e2e              # full Playwright E2E (CI runs it on every PR; locally only when needed); own server :3100 and client :5180 on e2e.db
 npx playwright install chromium      # in client/; once after install, downloads the browser
 npm run typecheck -w server   # or -w client (also checks client/e2e); tsc --noEmit
 npm run build -w client       # production build of the client
@@ -88,7 +88,7 @@ Project skills live in `.claude/skills/<name>/SKILL.md` and project agents in `.
 | `backend-developer` | `server/`, `docs/postman/`, the skills `api-conventions`, `data-model`, `scheduling-engine`, `testing` and `backend-best-practices` | `api-conventions`, `data-model`, `scheduling-engine`, `testing`, `backend-best-practices`, `refactor` |
 | `frontend-developer` | `client/`, the skills `ui-conventions`, `ui-design` and `best-code-practices`, and the mirrored sections of `.github/copilot-instructions.md` | `ui-conventions`, `ui-design`, `best-code-practices`, `refactor`, plus the server skills to use the API correctly |
 
-Each agent reads a skill when its task touches that area. An agent may update the skills it owns, but only to record what the brief already settled (a response shape, a field limit, a new helper). A change to a rule is a deviation: the agent stops and reports it, and the user decides. Neither agent creates a new skill, edits the agents, the other skills, the rest of `.github/`, this file or `docs/architecture.md`, or touches the root `package.json` or the lock file. Neither installs packages, runs the dev server or commits. Both may run `npm run e2e`: it starts its own server and client on ports 3100 and 5180 with `e2e.db`, not the dev server.
+Each agent reads a skill when its task touches that area. An agent may update the skills it owns, but only to record what the brief already settled (a response shape, a field limit, a new helper). A change to a rule is a deviation: the agent stops and reports it, and the user decides. Neither agent creates a new skill, edits the agents, the other skills, the rest of `.github/`, this file or `docs/architecture.md`, or touches the root `package.json` or the lock file. Neither installs packages, runs the dev server or commits. Both run E2E only when needed: the spec they are writing or fixing (`npx playwright test e2e/<file>.spec.ts` in `client/`), never the full suite. The full `npm run e2e` runs in CI on the draft PR. Playwright starts its own server and client on ports 3100 and 5180 with `e2e.db`, not the dev server.
 
 ### A feature with both agents
 

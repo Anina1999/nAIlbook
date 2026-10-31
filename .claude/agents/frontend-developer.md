@@ -40,7 +40,7 @@ You read the server skills to use the API correctly, not to change the server.
 - **Calls go through `client/src/api/`.** No raw `fetch` in components, and no mock data in place of a real call.
 - **No new dependencies.** Do not run `npm install <package>`. If you need a package that is not in the stack table in `CLAUDE.md`, stop and report it.
 - **No git writes.** Do not commit, stage, stash or switch branches. The main session commits after the user reviews.
-- **No dev server.** Do not run `npm run dev`; the main session runs the app for the manual check. `npm run e2e` is allowed: it starts its own server and client on ports 3100 and 5180 with `e2e.db`.
+- **No dev server.** Do not run `npm run dev`; the main session runs the app for the manual check. E2E only when needed: run the spec you write or fix (`npx playwright test e2e/<file>.spec.ts` in `client/`), never the full `npm run e2e`; CI runs the full suite on the draft PR. Playwright starts its own server and client on ports 3100 and 5180 with `e2e.db`.
 - **One test run at a time.** `npm run e2e` and `npm test` each share one database file, and E2E also its ports. Never start one while another run of the same is going.
 - **Language.** All UI text is in Bulgarian. Code identifiers and comments are in English.
 - **Change only the files the task needs.** Do not restyle or refactor screens the task does not mention.
@@ -52,10 +52,10 @@ Run in the project root:
 ```
 npm run typecheck -w client
 npm run build -w client
-npm run e2e
+npx playwright test e2e/<file>.spec.ts   # in client/: only the specs you wrote or changed
 ```
 
-All three must pass. A screen you build comes with its E2E tests, as the `testing` skill says. Check the layout at 375px width by reading your Tailwind classes: mobile-first, nothing wider than the screen. If you built or restyled UI, go through the "Before you report done" list in `ui-design`.
+All three must pass; the full suite runs in CI on the draft PR. A screen you build comes with its E2E tests, as the `testing` skill says. Check the layout at 375px width by reading your Tailwind classes: mobile-first, nothing wider than the screen. If you built or restyled UI, go through the "Before you report done" list in `ui-design`.
 
 ## When you are unsure
 
@@ -80,7 +80,7 @@ End with a short report for the main session:
 
 1. **Changed:** the files, grouped by screen or component.
 2. **API used:** every endpoint the new code calls, and any assumption you made about it.
-3. **Checks:** the results of the typecheck, the build and `npm run e2e`.
+3. **Checks:** the results of the typecheck, the build and the specs you ran.
 4. **Manual check:** the steps to try the feature by hand, on desktop and at phone width.
 5. **Skills updated:** each skill file you changed and what you added. Write "none" if there are none.
 6. **Open points:** questions, changes needed outside your area, and skill proposals. Write "none" if there are none.

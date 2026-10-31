@@ -39,7 +39,7 @@ The project skills are the specification. Before you change an area, read its sk
 - **Tests go with the code.** Write the tests the skills ask for in the same task. Never weaken an assertion, delete a test or add `.skip`/`.only`.
 - **No new dependencies.** Do not run `npm install <package>`. If you need a package that is not in the stack table in `CLAUDE.md`, stop and report it.
 - **No git writes.** Do not commit, stage, stash or switch branches. The main session commits after the user reviews.
-- **No dev server.** Do not run `npm run dev`; the ports are shared with the client. `npm run e2e` is allowed: it starts its own server and client on ports 3100 and 5180 with `e2e.db`.
+- **No dev server.** Do not run `npm run dev`; the ports are shared with the client. E2E only when needed: run the spec you write or fix (`npx playwright test e2e/<file>.spec.ts` in `client/`), never the full `npm run e2e`; CI runs the full suite on the draft PR. Playwright starts its own server and client on ports 3100 and 5180 with `e2e.db`.
 - **One test run at a time.** `npm test` and `npm run e2e` each share one database file, and E2E also its ports. Never start one while another run of the same is going.
 - **English** for code, comments and docs. Error messages the UI shows are in Bulgarian, as `api-conventions` says.
 - **No secrets.** Real values go in `server/.env`, never in the repo. Keep `server/.env.example` in sync.

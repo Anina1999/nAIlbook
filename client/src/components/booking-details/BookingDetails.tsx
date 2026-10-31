@@ -1,19 +1,15 @@
-import { useId, useRef, useState, type FormEvent } from 'react';
+import { useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type { Booking } from '../../api/bookings';
 import { useCancelBooking } from '../../hooks/useCancelBooking';
-import { useForm } from '../../hooks/useForm';
 import { sofiaDateOfIso } from '../../utils/dates';
 import { formatCancelledBy, formatLongDate, formatTimeRange } from '../../utils/format';
 import Button from '../button/Button';
+import CancelForm from '../cancel-form/CancelForm';
 import ErrorMessage from '../error-message/ErrorMessage';
-import FormField from '../form-field/FormField';
 import Price from '../price/Price';
 import StatusBadge from '../status-badge/StatusBadge';
 import styles from './BookingDetails.module.css';
-
-/** The server's limit for a cancel reason (api-conventions). */
-const REASON_MAX_LENGTH = 200;
 
 type BookingDetailsProps = {
   /** The active booking. Give the panel `key={booking.id}`, so another booking starts with a closed form. */
@@ -32,7 +28,6 @@ export default function BookingDetails({ booking, onReload }: BookingDetailsProp
   const titleRef = useRef<HTMLHeadingElement>(null);
   const openButtonRef = useRef<HTMLButtonElement>(null);
   const [formOpen, setFormOpen] = useState(false);
-  const { values, changeHandler } = useForm({ reason: '' });
   const { cancel, pending, error, fieldError, cancelled, reset } = useCancelBooking(onReload);
 
   const booked = booking.status === 'BOOKED';
@@ -41,10 +36,8 @@ export default function BookingDetails({ booking, onReload }: BookingDetailsProp
   const canCancel = booked && !started && !cancelled;
   const { manicurist } = booking;
 
-  const submitHandler = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    // Sent as typed: the server trims it and checks its length.
-    const done = await cancel(booking.id, values.reason);
+  const submitHandler = async (reason: string) => {
+    const done = await cancel(booking.id, reason);
     if (done) {
       setFormOpen(false);
       // The form is gone; the focus goes to the panel, where «Часът е отменен.» is announced.
@@ -105,26 +98,7 @@ export default function BookingDetails({ booking, onReload }: BookingDetailsProp
 
       {canCancel &&
         (formOpen ? (
-          <form noValidate onSubmit={submitHandler} className={styles.form}>
-            <FormField
-              label="Причина за отмяната"
-              name="reason"
-              value={values.reason}
-              onChange={changeHandler}
-              error={fieldError ?? undefined}
-              multiline
-              maxLength={REASON_MAX_LENGTH}
-              autoFocus
-            />
-            <div className={styles.actions}>
-              <Button type="submit" variant="dangerSolid" disabled={pending}>
-                {pending ? 'Отменяне…' : 'Потвърди отмяната'}
-              </Button>
-              <Button variant="secondary" onClick={backHandler}>
-                Назад
-              </Button>
-            </div>
-          </form>
+          <CancelForm pending={pending} fieldError={fieldError} onSubmit={submitHandler} onBack={backHandler} />
         ) : (
           <div className={styles.actions}>
             <Button ref={openButtonRef} variant="danger" onClick={() => setFormOpen(true)}>

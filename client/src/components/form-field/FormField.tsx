@@ -17,6 +17,9 @@ type FormFieldProps = {
   required?: boolean;
   /** Limits the length and shows a counter «11/200» under the field, linked with `aria-describedby`. */
   maxLength?: number;
+  /** The earliest and the latest value of a date input, as `YYYY-MM-DD`. */
+  min?: string;
+  max?: string;
   /** Focuses the control when it appears (a form opened by a button that it replaces). */
   autoFocus?: boolean;
   /** `glass` is the field on the night's glass search panel: a white label with a shadow, a 44px input. */
@@ -35,6 +38,8 @@ export default function FormField({
   multiline = false,
   required = false,
   maxLength,
+  min,
+  max,
   autoFocus,
   variant = 'sheet',
 }: FormFieldProps) {
@@ -71,7 +76,7 @@ export default function FormField({
       {multiline ? (
         <textarea {...shared} rows={4} className={`${inputClass} ${styles.textarea}`} />
       ) : (
-        <input {...shared} type={type} className={inputClass} />
+        <input {...shared} type={type} min={min} max={max} className={inputClass} />
       )}
       {error && (
         <p id={errorId} className={styles.error}>

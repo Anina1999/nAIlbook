@@ -28,6 +28,11 @@ export default function Header() {
             Моите часове
           </NavLink>
         )}
+        {user.role === 'MANICURIST' && (
+          <NavLink to="/days-off" className={styles.link}>
+            Почивни дни
+          </NavLink>
+        )}
         <span className={styles.userName}>{user.name}</span>
         <button type="button" className={styles.outline} onClick={logoutHandler} disabled={loggingOut}>
           {loggingOut ? 'Излизане…' : 'Изход'}

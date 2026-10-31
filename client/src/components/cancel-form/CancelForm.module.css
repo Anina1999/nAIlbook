@@ -1,0 +1,10 @@
+@reference "../../index.css";
+
+/* ui-design, Components, Cancel form. */
+.form {
+  @apply flex flex-col gap-4;
+}
+
+.actions {
+  @apply flex flex-wrap gap-2;
+}

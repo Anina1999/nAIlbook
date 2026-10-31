@@ -1,0 +1,21 @@
+@reference "../../index.css";
+
+.panel {
+  @apply flex min-w-0 flex-col gap-3;
+}
+
+/* Focused after a cancellation, when the row it held is gone. */
+.title {
+  @apply rounded-lg font-display text-xl font-bold wrap-break-word text-ink;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+/* success on white: 5.3. Never hidden, so it is announced. */
+.success {
+  @apply font-semibold text-success;
+}
+
+/* Rows in one container, as the booking rows (ui-design, Components, Bookings rows). */
+.list {
+  @apply flex flex-col overflow-hidden rounded-xl border border-line bg-raised divide-y divide-line;
+}

@@ -4,9 +4,33 @@
    which sets the height, the radius and the border. `isolation` keeps Leaflet's panes
    (z-index 400–1000) under the header and the carousel arrows. The focus outline sits
    inside, so the frame's rounded clip does not cut it; accent on the light tiles. */
+/* The map and the wheel hint over it, in one stacking context. */
+.wrap {
+  @apply relative h-full w-full;
+  isolation: isolate;
+}
+
 .map {
   @apply h-full w-full;
   isolation: isolate;
+}
+
+/* «Задръжте Ctrl…», centred over the map for a moment after a turn of the wheel without
+   Ctrl. White on ink at 80% over the light tiles: above 10:1. */
+.wheelHint {
+  @apply pointer-events-none absolute top-1/2 left-1/2 z-10 max-w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2;
+  @apply rounded-control px-4 py-2 text-center text-sm font-medium text-white opacity-0;
+  background-color: color-mix(in srgb, var(--color-ink) 80%, transparent);
+}
+
+.wheelHintShown {
+  @apply opacity-100;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .wheelHint {
+    transition: opacity 200ms ease;
+  }
 }
 
 /* The land colour of the OpenStreetMap tiles under them, instead of Leaflet's grey, so the

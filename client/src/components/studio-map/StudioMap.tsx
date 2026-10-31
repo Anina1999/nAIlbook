@@ -38,8 +38,38 @@ const ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright">сът
 const BULGARIA: L.LatLngTuple = [42.7, 25.3];
 /** Zoom for a single studio and for a chosen one (the street), and the most `fitBounds` may zoom in for several. */
 const SINGLE_ZOOM = 16;
-/** Seconds of the flight to a chosen studio, when motion is allowed. */
+/** Seconds of each step of the flight to a chosen studio, when motion is allowed. */
 const FLY_DURATION = 0.8;
+/**
+ * The most zoom levels one step of the flight goes in. While the tiles of a new zoom load,
+ * Leaflet shows the loaded tiles of up to 5 levels above it; a longer jump (the country
+ * at 7 to the street at 16) would show the empty ground until the new tiles arrive.
+ */
+const MAX_ZOOM_STEP = 5;
+/** The longest wait for a step's tiles before the next step goes on anyway. */
+const TILE_WAIT_MS = 1500;
+/** How long the «Ctrl + колелото» hint stays after the last turn of the wheel. */
+const WHEEL_HINT_MS = 1500;
+const WHEEL_HINT = /Mac|iPhone|iPad/.test(navigator.userAgent)
+  ? 'Задръжте ⌘ и завъртете колелото, за да приближите картата.'
+  : 'Задръжте Ctrl и завъртете колелото, за да приближите картата.';
+
+/** Calls `onDone` once the layer's tiles in view are loaded, or after `TILE_WAIT_MS`. */
+function whenTilesLoaded(tiles: L.TileLayer, onDone: () => void) {
+  if (!tiles.isLoading()) {
+    onDone();
+    return;
+  }
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    tiles.off('load', finish);
+    onDone();
+  };
+  tiles.once('load', finish);
+  window.setTimeout(finish, TILE_WAIT_MS);
+}
 const FIT_MAX_ZOOM = 15;
 /** Keeps the markers off the map's edges after `fitBounds`. */
 const FIT_PADDING: L.PointTuple = [40, 40];
@@ -95,6 +125,10 @@ export default function StudioMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
   const [map, setMap] = useState<L.Map | null>(null);
+  const tilesRef = useRef<L.TileLayer | null>(null);
+  // Bumped by every new flight, «Всички студиа» and a redraw, so an older flight stops between its steps.
+  const flightRef = useRef(0);
+  const [wheelHint, setWheelHint] = useState(false);
   // The markers drawn on `map`, by id; state, so the effect that marks them runs after a redraw.
   const [drawn, setDrawn] = useState<Map<number, L.Marker> | null>(null);
   const selectable = onMarkerSelect !== undefined;
@@ -109,7 +143,8 @@ export default function StudioMap({
     const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
     const instance = L.map(container, {
       zoomControl: false,
-      scrollWheelZoom: false,
+      // Only with Ctrl (⌘): the handler below lets every other turn of the wheel scroll the page.
+      scrollWheelZoom: true,
       dragging: !coarsePointer,
       zoomAnimation: !reducedMotion,
       fadeAnimation: !reducedMotion,
@@ -118,10 +153,31 @@ export default function StudioMap({
     L.control.zoom({ zoomInTitle: 'Приближи', zoomOutTitle: 'Отдалечи' }).addTo(instance);
     // Only the OpenStreetMap credit, without Leaflet's own link before it.
     instance.attributionControl.setPrefix(false);
-    L.tileLayer(TILE_URL, { maxZoom: 19, attribution: ATTRIBUTION }).addTo(instance);
+    // No tiles of the levels passed during a zoom: the loaded ones are scaled instead of
+    // leaving empty ground while in-between tiles load.
+    tilesRef.current = L.tileLayer(TILE_URL, { maxZoom: 19, attribution: ATTRIBUTION, updateWhenZooming: false }).addTo(
+      instance,
+    );
+
+    // A turn of the wheel without Ctrl (⌘) never reaches Leaflet, so the page scrolls on;
+    // a short hint says how to zoom. Capture runs before Leaflet's own listener.
+    let hintTimer: number | undefined;
+    const wheelHandler = (event: WheelEvent) => {
+      if (event.ctrlKey || event.metaKey) return;
+      event.stopPropagation();
+      setWheelHint(true);
+      window.clearTimeout(hintTimer);
+      hintTimer = window.setTimeout(() => setWheelHint(false), WHEEL_HINT_MS);
+    };
+    container.addEventListener('wheel', wheelHandler, { capture: true, passive: true });
+
     setMap(instance);
     return () => {
+      container.removeEventListener('wheel', wheelHandler, { capture: true });
+      window.clearTimeout(hintTimer);
+      flightRef.current++;
       instance.remove();
+      tilesRef.current = null;
       setMap(null);
     };
   }, [reducedMotion]);
@@ -144,9 +200,10 @@ export default function StudioMap({
     // After the map flew to a chosen studio, this brings back the view of all of them.
     const overview =
       selectable && markers.length > 1
-        ? overviewControl(() =>
-            map.fitBounds(bounds, { padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM, animate: !reducedMotion }),
-          ).addTo(map)
+        ? overviewControl(() => {
+            flightRef.current++; // stops a flight still on its way
+            map.fitBounds(bounds, { padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM, animate: !reducedMotion });
+          }).addTo(map)
         : null;
     // Leaflet stacks a corner's controls in the order they are added; this one goes on top.
     const overviewElement = overview?.getContainer();
@@ -183,6 +240,7 @@ export default function StudioMap({
     setDrawn(byId);
 
     return () => {
+      flightRef.current++;
       layer.remove();
       overview?.remove();
       setDrawn(null);
@@ -205,11 +263,30 @@ export default function StudioMap({
 
   // Reads the active marker at the moment of the request, so a new active card or a
   // redraw alone never moves the map.
+  // The flight goes in steps of at most MAX_ZOOM_STEP levels and waits for each step's
+  // tiles, so the tiles of the step before stay on screen while the next ones load.
   const flyToActive = useEffectEvent(() => {
     const active = activeId === null ? undefined : drawn?.get(activeId);
-    if (!map || !active) return;
-    if (reducedMotion) map.setView(active.getLatLng(), SINGLE_ZOOM, { animate: false });
-    else map.flyTo(active.getLatLng(), SINGLE_ZOOM, { duration: FLY_DURATION });
+    const tiles = tilesRef.current;
+    if (!map || !active || !tiles) return;
+    const target = active.getLatLng();
+    const flight = ++flightRef.current;
+    // Enough steps from the whole world (zoom 0) to the street, so the flight always ends.
+    let stepsLeft = Math.ceil(SINGLE_ZOOM / MAX_ZOOM_STEP);
+
+    const step = () => {
+      if (flight !== flightRef.current) return; // a newer choice or «Всички студиа» took over
+      stepsLeft--;
+      const zoom = Math.min(SINGLE_ZOOM, map.getZoom() + MAX_ZOOM_STEP);
+      map.once('moveend', () =>
+        whenTilesLoaded(tiles, () => {
+          if (map.getZoom() < SINGLE_ZOOM && stepsLeft > 0) step();
+        }),
+      );
+      if (reducedMotion) map.setView(target, zoom, { animate: false });
+      else map.flyTo(target, zoom, { duration: FLY_DURATION });
+    };
+    step();
   });
 
   // Every choice of the user flies the map to the active studio, at street level; the
@@ -220,5 +297,13 @@ export default function StudioMap({
 
   // Leaflet makes the container focusable, for panning with the arrow keys; the role gives
   // it a name.
-  return <div ref={containerRef} role="region" aria-label={label} className={styles.map} />;
+  return (
+    <div className={styles.wrap}>
+      <div ref={containerRef} role="region" aria-label={label} className={styles.map} />
+      {/* For mouse users only: the keyboard and touch zoom without the wheel. */}
+      <p aria-hidden="true" className={[styles.wheelHint, wheelHint && styles.wheelHintShown].filter(Boolean).join(' ')}>
+        {WHEEL_HINT}
+      </p>
+    </div>
+  );
 }

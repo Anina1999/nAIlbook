@@ -100,9 +100,9 @@
   fill: var(--color-white);
 }
 
+/* As in the design: fainter below lg, gone below sm, where they would sit under the text. */
 .flourish {
-  @apply absolute overflow-visible;
-  opacity: 0.7;
+  @apply absolute overflow-visible opacity-70 max-lg:opacity-40 max-sm:hidden;
   filter:
     drop-shadow(0 0 2px color-mix(in srgb, var(--color-flourish-halo) 90%, transparent))
     drop-shadow(0 0 8px color-mix(in srgb, var(--color-lilac-halo) 55%, transparent));
@@ -144,8 +144,9 @@
   opacity: 0.35;
 }
 
+/* Gone below sm, like the flourishes. */
 .starColumn {
-  @apply absolute overflow-visible;
+  @apply absolute overflow-visible max-sm:hidden;
   right: 22px;
   top: 105px;
   filter:

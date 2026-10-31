@@ -1,0 +1,33 @@
+@reference "../../index.css";
+
+.page {
+  @apply flex flex-col gap-8;
+}
+
+/* Titles in the display font on the sheet (ui-design, Type). */
+.title {
+  @apply font-display text-3xl font-bold text-ink;
+}
+
+.day {
+  @apply flex min-w-0 flex-col gap-4;
+}
+
+.bookings {
+  @apply flex min-w-0 flex-col gap-3;
+}
+
+/* success on the sheet: 5.0. Never hidden, so it is announced. */
+.success {
+  @apply font-semibold text-success;
+}
+
+/* muted on the sheet: 5.8. */
+.note {
+  @apply text-muted;
+}
+
+/* Rows in one container, not a card per row (ui-design, Components, Bookings rows). */
+.list {
+  @apply flex flex-col overflow-hidden rounded-xl border border-line bg-raised divide-y divide-line;
+}

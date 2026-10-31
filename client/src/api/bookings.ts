@@ -56,3 +56,15 @@ export function getMyBookings(signal?: AbortSignal): Promise<MyBookings> {
 export function cancelBooking(id: number, reason: string): Promise<{ booking: Booking }> {
   return request<{ booking: Booking }>(`/bookings/${id}/cancel`, { method: 'PATCH', body: { reason } });
 }
+
+/** The manicurist's bookings on one Sofia date (`YYYY-MM-DD`), by start time; cancelled ones included. */
+export type DaySchedule = {
+  date: string;
+  bookings: Booking[];
+};
+
+/** The logged-in manicurist's bookings on a Sofia date. A load, so it takes the signal. */
+export function getSchedule(date: string, signal?: AbortSignal): Promise<DaySchedule> {
+  const params = new URLSearchParams({ date });
+  return request<DaySchedule>(`/bookings/schedule?${params}`, { signal });
+}

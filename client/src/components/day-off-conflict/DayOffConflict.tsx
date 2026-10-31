@@ -1,9 +1,14 @@
 import { useId, useRef } from 'react';
 import type { DayOffConflict as Conflict } from '../../hooks/useMarkDayOff';
 import { formatLongDate } from '../../utils/format';
-import ConflictBooking from '../conflict-booking/ConflictBooking';
 import ErrorMessage from '../error-message/ErrorMessage';
+import ScheduleBooking from '../schedule-booking/ScheduleBooking';
 import styles from './DayOffConflict.module.css';
+
+// Nothing to reload here: the bookings come from the day-off answer, and asking again
+// would mean sending the day off again. A cancelled booking leaves through `onCancelled`;
+// one the server refuses stays with its message.
+const noReload = () => {};
 
 type DayOffConflictProps = {
   conflict: Conflict;
@@ -44,7 +49,12 @@ export default function DayOffConflict({ conflict, onBookingCancelled }: DayOffC
       {!cleared && (
         <ul className={styles.list}>
           {conflict.bookings.map((booking) => (
-            <ConflictBooking key={booking.id} booking={booking} onCancelled={cancelledHandler} />
+            <ScheduleBooking
+              key={booking.id}
+              booking={booking}
+              onCancelled={cancelledHandler}
+              onReload={noReload}
+            />
           ))}
         </ul>
       )}

@@ -46,9 +46,17 @@ export function formatTimeRange(startIso: string, endIso: string): string {
   return `${formatTime(startIso)}–${formatTime(endIso)}`;
 }
 
-/** Who cancelled a booking, for the client: `'CLIENT'` → «Отменен от вас.» */
-export function formatCancelledBy(cancelledBy: 'CLIENT' | 'MANICURIST' | null): string {
-  return cancelledBy === 'MANICURIST' ? 'Отменен от маникюриста.' : 'Отменен от вас.';
+/**
+ * Who cancelled a booking, as the viewer reads it: for the client `'MANICURIST'` →
+ * «Отменен от маникюриста.», for the manicurist `'CLIENT'` → «Отменен от клиента.»;
+ * the viewer's own cancellation → «Отменен от вас.»
+ */
+export function formatCancelledBy(
+  cancelledBy: 'CLIENT' | 'MANICURIST' | null,
+  viewer: 'CLIENT' | 'MANICURIST',
+): string {
+  if (viewer === 'CLIENT') return cancelledBy === 'MANICURIST' ? 'Отменен от маникюриста.' : 'Отменен от вас.';
+  return cancelledBy === 'CLIENT' ? 'Отменен от клиента.' : 'Отменен от вас.';
 }
 
 /** The bookings of a week: `0` → «Няма часове през тази седмица.», `1` → «1 час през седмицата», `3` → «3 часа през седмицата». */

@@ -9,6 +9,7 @@ import Home from './pages/home/Home';
 import ManicuristPage from './pages/manicurist/Manicurist';
 import DaysOff from './pages/days-off/DaysOff';
 import MyBookings from './pages/my-bookings/MyBookings';
+import Schedule from './pages/schedule/Schedule';
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="/my-bookings" element={<MyBookings />} />
           </Route>
           <Route element={<RoleGuard roles={['MANICURIST']} />}>
+            <Route path="/schedule" element={<Schedule />} />
             <Route path="/days-off" element={<DaysOff />} />
           </Route>
         </Route>

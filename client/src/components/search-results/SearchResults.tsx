@@ -24,6 +24,14 @@ export default function SearchResults({ manicurists, loading, titleClassName }: 
   const mapTitleId = useId();
   const [activeId, setActiveId] = useState(manicurists[0].id);
   const [highlightedId, setHighlightedId] = useState<number | null>(null);
+  // Bumped on every choice of the user, so the map flies to the chosen studio, even when
+  // the active card is chosen again; 0 keeps the view of all the studios at the start.
+  const [zoomRequest, setZoomRequest] = useState(0);
+
+  const chooseHandler = (id: number) => {
+    setActiveId(id);
+    setZoomRequest((count) => count + 1);
+  };
 
   return (
     <>
@@ -37,7 +45,7 @@ export default function SearchResults({ manicurists, loading, titleClassName }: 
           manicurists={manicurists}
           loading={loading}
           activeId={activeId}
-          onActiveChange={setActiveId}
+          onActiveChange={chooseHandler}
           onHighlight={setHighlightedId}
         />
       </section>
@@ -55,7 +63,8 @@ export default function SearchResults({ manicurists, loading, titleClassName }: 
             markers={manicurists}
             activeId={activeId}
             highlightedId={highlightedId}
-            onMarkerSelect={setActiveId}
+            onMarkerSelect={chooseHandler}
+            zoomRequest={zoomRequest}
             label="Карта на студиата"
           />
         </div>

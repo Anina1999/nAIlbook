@@ -15,6 +15,7 @@
   --color-accent: #A3195B;        /* primary buttons, selected slot and date, links */
   --color-accent-strong: #82124A; /* hover and active state of accent */
   --color-accent-soft: #F6E3EC;   /* current day, selected row, badges */
+  --color-map-ground: #F2EFE9;    /* the land colour of the OSM tiles, under them while they load */
   --color-danger: #B42318;        /* errors, destructive actions */
   --color-danger-soft: #FDECEA;   /* background of error boxes */
   --color-success: #1F7A4D;       /* confirmations */

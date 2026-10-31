@@ -231,3 +231,37 @@ test('a new search starts with its first card and marker active', async ({ page 
   await expect(carousel(page).getByRole('status')).toHaveText(/^Показан[аи] 1(–\d+)? от \d+$/);
   await expectActive(page, first.name, second.name);
 });
+
+test('choosing a studio flies the map to its street, and «Всички студиа» shows every studio again', async ({
+  page,
+}) => {
+  // The flight is instant under reduced motion; the test checks where the map lands.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const res = await page.request.get(`${API_URL}/manicurists`);
+  const { manicurists } = (await res.json()) as {
+    manicurists: { name: string; latitude: number; longitude: number }[];
+  };
+  const [first] = manicurists;
+  // A studio far from the first one (another city), off the map once it shows the first one's street.
+  const far = manicurists.find(
+    (m) => Math.abs(m.latitude - first.latitude) + Math.abs(m.longitude - first.longitude) > 0.5,
+  );
+  expect(far).toBeDefined();
+
+  await page.goto('/');
+  await readCounter(page);
+  // At the start the map shows every studio, the first card already active.
+  await mapSection(page).scrollIntoViewIfNeeded();
+  await expect(marker(page, first.name)).toBeInViewport();
+  await expect(marker(page, far!.name)).toBeInViewport();
+
+  // Choosing the active card again still flies the map to it.
+  await cardButton(page, first.name).click();
+  await mapSection(page).scrollIntoViewIfNeeded();
+  await expect(marker(page, first.name)).toBeInViewport();
+  await expect(marker(page, far!.name)).not.toBeInViewport();
+
+  await mapSection(page).getByRole('button', { name: 'Всички студиа' }).click();
+  await expect(marker(page, far!.name)).toBeInViewport();
+  await expect(marker(page, first.name)).toBeInViewport();
+});

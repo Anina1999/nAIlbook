@@ -9,6 +9,29 @@
   isolation: isolate;
 }
 
+/* The land colour of the OpenStreetMap tiles under them, instead of Leaflet's grey, so the
+   map never flashes grey while the tiles of a new zoom load. Two classes win over leaflet.css. */
+.map:global(.leaflet-container) {
+  background: var(--color-map-ground);
+}
+
+/* «Всички студиа» and the zoom buttons: frosted glass over the map, white on hover. */
+/* Three classes, so the border wins over leaflet.css (`.leaflet-touch .leaflet-bar`). */
+.map:global(.leaflet-container) :global(.leaflet-bar) {
+  border-color: color-mix(in srgb, var(--color-white) 60%, transparent);
+}
+
+.map :global(.leaflet-bar a),
+.overviewButton {
+  background-color: color-mix(in srgb, var(--color-white) 65%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.map :global(.leaflet-bar a:hover),
+.overviewButton:hover {
+  background-color: color-mix(in srgb, var(--color-white) 92%, transparent);
+}
+
 .map:focus-visible {
   @apply outline-2 -outline-offset-4 outline-accent;
 }
@@ -19,6 +42,16 @@
   width: 44px;
   height: 44px;
   line-height: 44px;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+/* «Всички студиа» above the zoom buttons, in the same glass bar look, 44px high. */
+.overview {
+  @apply overflow-hidden;
+}
+
+.overviewButton {
+  @apply block h-11 cursor-pointer px-3 text-sm font-semibold text-ink;
   @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
 }
 

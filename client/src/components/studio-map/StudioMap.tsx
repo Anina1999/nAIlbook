@@ -19,8 +19,14 @@ type StudioMapProps = {
   activeId?: number | null;
   /** The marker whose card has the hover or the focus. */
   highlightedId?: number | null;
-  /** Without it the markers are pictures (`role="img"`), not buttons. */
+  /** Without it the markers are pictures (`role="img"`), not buttons, and there is no «Всички студиа». */
   onMarkerSelect?: (id: number) => void;
+  /**
+   * Bumped by the parent every time the user chooses a studio (a card, a marker, the
+   * arrows): the map then flies to the active marker at street level. 0, the start,
+   * keeps the view of all the studios.
+   */
+  zoomRequest?: number;
   /** The accessible name of the map container. */
   label: string;
 };
@@ -30,8 +36,10 @@ const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright">сътрудниците на OpenStreetMap</a>';
 /** Shown only when there is no marker at all: the centre of Bulgaria. */
 const BULGARIA: L.LatLngTuple = [42.7, 25.3];
-/** Zoom for a single studio, and the most `fitBounds` may zoom in for several. */
+/** Zoom for a single studio and for a chosen one (the street), and the most `fitBounds` may zoom in for several. */
 const SINGLE_ZOOM = 16;
+/** Seconds of the flight to a chosen studio, when motion is allowed. */
+const FLY_DURATION = 0.8;
 const FIT_MAX_ZOOM = 15;
 /** Keeps the markers off the map's edges after `fitBounds`. */
 const FIT_PADDING: L.PointTuple = [40, 40];
@@ -52,18 +60,36 @@ function markerIcon(selectable: boolean): L.DivIcon {
   });
 }
 
+/** «Всички студиа», a Leaflet control above the zoom buttons that shows every marker again. */
+function overviewControl(onClick: () => void): L.Control {
+  const control = new L.Control({ position: 'topleft' });
+  control.onAdd = () => {
+    const container = L.DomUtil.create('div', `leaflet-bar ${styles.overview}`);
+    const button = L.DomUtil.create('button', styles.overviewButton, container);
+    button.type = 'button';
+    button.textContent = 'Всички студиа';
+    // A click on the button must not reach the map below it.
+    L.DomEvent.disableClickPropagation(container);
+    L.DomEvent.on(button, 'click', onClick);
+    return container;
+  };
+  return control;
+}
+
 /**
  * A Leaflet map with a marker per studio (plain `leaflet`, best-code-practices §11).
  * One effect creates the map, one draws the markers and fits the view to them, one marks
- * the active and the highlighted marker, and one pans to the active marker when it is
- * outside the view. With `onMarkerSelect` every marker is a button named
- * «<име> на картата»: a click, Enter or Space chooses it and the focus stays on it.
+ * the active and the highlighted marker, and one flies to the active marker at street
+ * level whenever the parent bumps `zoomRequest`. With `onMarkerSelect` every marker is a
+ * button named «<име> на картата»: a click, Enter or Space chooses it and the focus stays
+ * on it, and «Всички студиа» shows every marker again.
  */
 export default function StudioMap({
   markers,
   activeId = null,
   highlightedId = null,
   onMarkerSelect,
+  zoomRequest = 0,
   label,
 }: StudioMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -106,14 +132,25 @@ export default function StudioMap({
     if (!map) return;
     // The view comes first: Leaflet adds layers only once the map has one, and the
     // markers' elements are needed right away for their names.
+    const bounds = L.latLngBounds(markers.map((studio): L.LatLngTuple => [studio.latitude, studio.longitude]));
     if (markers.length === 1) {
       map.setView([markers[0].latitude, markers[0].longitude], SINGLE_ZOOM, { animate: false });
     } else if (markers.length > 1) {
-      const bounds = L.latLngBounds(markers.map((studio): L.LatLngTuple => [studio.latitude, studio.longitude]));
       map.fitBounds(bounds, { padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM, animate: false });
     } else {
       map.setView(BULGARIA, 7, { animate: false });
     }
+
+    // After the map flew to a chosen studio, this brings back the view of all of them.
+    const overview =
+      selectable && markers.length > 1
+        ? overviewControl(() =>
+            map.fitBounds(bounds, { padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM, animate: !reducedMotion }),
+          ).addTo(map)
+        : null;
+    // Leaflet stacks a corner's controls in the order they are added; this one goes on top.
+    const overviewElement = overview?.getContainer();
+    overviewElement?.parentElement?.prepend(overviewElement);
 
     const layer = L.layerGroup().addTo(map);
     const byId = new Map<number, L.Marker>();
@@ -147,9 +184,10 @@ export default function StudioMap({
 
     return () => {
       layer.remove();
+      overview?.remove();
       setDrawn(null);
     };
-  }, [map, markers, selectable]);
+  }, [map, markers, selectable, reducedMotion]);
 
   // Marks the active and the highlighted marker; the active one is on top.
   useEffect(() => {
@@ -165,15 +203,20 @@ export default function StudioMap({
     }
   }, [drawn, activeId, highlightedId, selectable]);
 
-  // When the active studio is outside the view (the user panned away, or it was chosen
-  // from a card), the map moves to it.
+  // Reads the active marker at the moment of the request, so a new active card or a
+  // redraw alone never moves the map.
+  const flyToActive = useEffectEvent(() => {
+    const active = activeId === null ? undefined : drawn?.get(activeId);
+    if (!map || !active) return;
+    if (reducedMotion) map.setView(active.getLatLng(), SINGLE_ZOOM, { animate: false });
+    else map.flyTo(active.getLatLng(), SINGLE_ZOOM, { duration: FLY_DURATION });
+  });
+
+  // Every choice of the user flies the map to the active studio, at street level; the
+  // start (0) keeps the view of all the studios.
   useEffect(() => {
-    if (!map || !drawn) return;
-    const active = activeId === null ? undefined : drawn.get(activeId);
-    if (!active) return;
-    const position = active.getLatLng();
-    if (!map.getBounds().contains(position)) map.panTo(position, { animate: !reducedMotion });
-  }, [map, drawn, activeId, reducedMotion]);
+    if (zoomRequest > 0) flyToActive();
+  }, [zoomRequest]);
 
   // Leaflet makes the container focusable, for panning with the arrow keys; the role gives
   // it a name.

@@ -10,24 +10,45 @@ const USER_AGENT = 'nAIlbook-test (https://example.com/test)';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
-const found = (lat = '42.6977', lon = '23.3219') => json([{ lat, lon, display_name: 'Тестов адрес' }]);
+// One result with addressdetails=1: the locality is in address.city, .town or .village.
+type Place = { lat?: string; lon?: string; address?: Record<string, string> };
+const place = ({ lat = '42.6977', lon = '23.3219', address = { city: 'София' } }: Place = {}) => ({
+  lat,
+  lon,
+  display_name: 'Тестов адрес',
+  address,
+});
+const found = (lat = '42.6977', lon = '23.3219', city = 'София') => json([place({ lat, lon, address: { city } })]);
 const notFound = () => json([]);
+// What Nominatim gave for «Христо Смирненски 5», Велико Търново: a street in
+// another town of the province (address.state).
+const otherTown = () =>
+  json([place({ lat: '43.1235', lon: '25.6923', address: { town: 'Горна Оряховица', state: 'Велико Търново' } })]);
 
 type FetchStub = ReturnType<typeof vi.fn<typeof fetch>>;
 
-function setup(answer: (call: number) => Response | Promise<Response> = () => found()) {
+// The default answer is found in the city the request asked for.
+function setup(
+  answer: (call: number, url: URL) => Response | Promise<Response> = (_, url) =>
+    found(undefined, undefined, url.searchParams.get('city')!),
+) {
   const times: number[] = [];
-  const fetchStub: FetchStub = vi.fn<typeof fetch>(async () => {
+  const fetchStub: FetchStub = vi.fn<typeof fetch>(async (input) => {
     times.push(Date.now());
-    return answer(times.length);
+    return answer(times.length, new URL(String(input)));
   });
   const lookup = createNominatimGeocoder({ fetch: fetchStub, userAgent: USER_AGENT });
   return { fetchStub, lookup, times };
 }
 
-// Runs the timers long enough for one queued request, then returns the result.
-async function settle<T>(promise: Promise<T>): Promise<T> {
-  await vi.advanceTimersByTimeAsync(1000);
+// The street sent in each request, in order.
+const streets = (fetchStub: FetchStub) =>
+  fetchStub.mock.calls.map(([input]) => new URL(String(input)).searchParams.get('street'));
+
+// Runs the timers long enough for the queued requests (one by default), then
+// returns the result.
+async function settle<T>(promise: Promise<T>, ms = 1000): Promise<T> {
+  await vi.advanceTimersByTimeAsync(ms);
   return promise;
 }
 
@@ -55,7 +76,8 @@ describe('createNominatimGeocoder', () => {
       city: 'София',
       country: 'България',
       format: 'jsonv2',
-      limit: '1',
+      addressdetails: '1',
+      limit: '5',
     });
     expect(new Headers(init?.headers).get('User-Agent')).toBe(USER_AGENT);
   });
@@ -69,7 +91,8 @@ describe('createNominatimGeocoder', () => {
   it('returns null when nothing is found', async () => {
     const { lookup } = setup(() => notFound());
 
-    await expect(settle(lookup('ул. Никоя 99', 'София'))).resolves.toBeNull();
+    // Three requests: as typed, without «ул.», without the number.
+    await expect(settle(lookup('ул. Никоя 99', 'София'), 2000)).resolves.toBeNull();
   });
 
   it('keeps two waiting requests at least 1000 ms apart', async () => {
@@ -118,8 +141,10 @@ describe('createNominatimGeocoder', () => {
   it('caches "not found" as well', async () => {
     const { fetchStub, lookup } = setup(() => notFound());
 
-    expect(await settle(lookup('ул. Никоя 99', 'София'))).toBeNull();
-    expect(await settle(lookup('ул. Никоя 99', 'София'))).toBeNull();
+    // No «ул.» and no number, so a lookup is one request; the retries have
+    // their own cache tests.
+    expect(await settle(lookup('Никоя', 'София'))).toBeNull();
+    expect(await settle(lookup('Никоя', 'София'))).toBeNull();
     expect(fetchStub).toHaveBeenCalledTimes(1);
   });
 
@@ -191,6 +216,213 @@ describe('createNominatimGeocoder', () => {
 
     expect(retried).toEqual({ latitude: 42.6977, longitude: 23.3219 });
     expect(fetchStub).toHaveBeenCalledTimes(2);
+  });
+
+  describe('the town of the result', () => {
+    it('returns null when the only result is in another town of the province', async () => {
+      const { lookup } = setup(() => otherTown());
+
+      await expect(settle(lookup('Христо Смирненски 5', 'Велико Търново'))).resolves.toBeNull();
+    });
+
+    it('returns null for a result with no city, town or village', async () => {
+      const { lookup } = setup(() => json([place({ address: { state: 'Велико Търново', country: 'България' } })]));
+
+      await expect(settle(lookup('Христо Смирненски 5', 'Велико Търново'))).resolves.toBeNull();
+    });
+
+    it.each(['city', 'town', 'village'])('accepts the town given in address.%s', async (field) => {
+      const { lookup } = setup(() => json([place({ lat: '43.08', lon: '25.63', address: { [field]: 'Велико Търново' } })]));
+
+      await expect(settle(lookup('Христо Ботев 5', 'Велико Търново'))).resolves.toEqual({
+        latitude: 43.08,
+        longitude: 25.63,
+      });
+    });
+
+    it('takes the first of several results in the given town, ignoring case and outer spaces', async () => {
+      const { lookup } = setup(() =>
+        json([
+          place({ lat: '43.1235', lon: '25.6923', address: { town: 'Горна Оряховица', state: 'Велико Търново' } }),
+          place({ lat: '43.0812', lon: '25.6290', address: { city: 'Велико Търново' } }),
+          place({ lat: '43.0700', lon: '25.6100', address: { city: 'Велико Търново' } }),
+        ]),
+      );
+
+      await expect(settle(lookup('Христо Ботев 5', '  велико търново '))).resolves.toEqual({
+        latitude: 43.0812,
+        longitude: 25.629,
+      });
+    });
+  });
+
+  describe('the second request without the street type', () => {
+    it.each([
+      ['nothing was found', notFound],
+      ['the result is in another town', otherTown],
+    ])('asks again without «ул.» when %s, at least 1000 ms later', async (_, firstAnswer) => {
+      const { fetchStub, lookup, times } = setup((call) =>
+        call === 1 ? firstAnswer() : found('43.0812', '25.6290', 'Велико Търново'),
+      );
+
+      const result = await settle(lookup('ул. Христо Ботев 5', 'Велико Търново'));
+
+      expect(result).toEqual({ latitude: 43.0812, longitude: 25.629 });
+      expect(streets(fetchStub)).toEqual(['ул. Христо Ботев 5', 'Христо Ботев 5']);
+      expect(times[1] - times[0]).toBeGreaterThanOrEqual(1000);
+    });
+
+    it.each([
+      ['ул.Христо Смирненски 5', 'Христо Смирненски 5'],
+      ['ул Христо Ботев 5', 'Христо Ботев 5'],
+      ['УЛ. Христо Ботев 5', 'Христо Ботев 5'],
+      ['улица Христо Ботев 5', 'Христо Ботев 5'],
+      ['бул. Витоша 1', 'Витоша 1'],
+      ['бул.Витоша 1', 'Витоша 1'],
+      ['бул Витоша 1', 'Витоша 1'],
+      ['Булевард Витоша 1', 'Витоша 1'],
+    ])('removes the street type from «%s»', async (address, stripped) => {
+      const { fetchStub, lookup } = setup((call) => (call === 1 ? notFound() : found()));
+
+      await settle(lookup(address, 'София'));
+
+      expect(streets(fetchStub)).toEqual([address, stripped]);
+    });
+
+    // The next request after the first one drops only the number.
+    it.each([
+      ['Христо Ботев 5', 'Христо Ботев'],
+      ['Улична 5', 'Улична'],
+      ['Булина ливада 3', 'Булина ливада'],
+    ])('keeps «%s», which has no street type', async (address, withoutNumber) => {
+      const { fetchStub, lookup } = setup(() => notFound());
+
+      await expect(settle(lookup(address, 'София'), 2000)).resolves.toBeNull();
+      expect(streets(fetchStub)).toEqual([address, withoutNumber]);
+    });
+
+    it('makes only one request when the first one finds the town', async () => {
+      const { fetchStub, lookup } = setup();
+
+      await settle(lookup('ул. Витоша 1', 'София'), 2000);
+
+      expect(fetchStub).toHaveBeenCalledTimes(1);
+    });
+
+    it('caches the answer of the second request by the original address', async () => {
+      const { fetchStub, lookup } = setup((call) => (call === 1 ? notFound() : found()));
+
+      const first = await settle(lookup('ул. Витоша 1', 'София'));
+      const second = await settle(lookup('ул. Витоша 1', 'София'));
+
+      expect(second).toEqual(first);
+      expect(first).not.toBeNull();
+      expect(fetchStub).toHaveBeenCalledTimes(2);
+    });
+
+    it('caches "not found" after both requests', async () => {
+      const { fetchStub, lookup } = setup(() => notFound());
+
+      // No number, so no third request.
+      expect(await settle(lookup('ул. Никоя', 'София'))).toBeNull();
+      expect(await settle(lookup('ул. Никоя', 'София'))).toBeNull();
+      expect(fetchStub).toHaveBeenCalledTimes(2);
+    });
+
+    it('throws GEOCODER_UNAVAILABLE when the second request fails, and does not cache it', async () => {
+      const { fetchStub, lookup } = setup((call) => (call === 1 ? notFound() : call === 2 ? json({}, 500) : found()));
+
+      const failed = lookup('ул. Витоша 1', 'София');
+      const assertion = expect(failed).rejects.toMatchObject(unavailable);
+      await vi.advanceTimersByTimeAsync(1000);
+      await assertion;
+      const retried = await settle(lookup('ул. Витоша 1', 'София'));
+
+      expect(retried).toEqual({ latitude: 42.6977, longitude: 23.3219 });
+      expect(fetchStub).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('the last request without the house number', () => {
+    // What Nominatim gave for «Христо Смирненски 4», Велико Търново: house 4
+    // exists only in Златарица; the street alone is also in Велико Търново.
+    const zlataritsa = () =>
+      json([place({ lat: '43.0470', lon: '25.8863', address: { village: 'Златарица', state: 'Велико Търново' } })]);
+    const streetInTarnovo = () =>
+      json([
+        place({ lat: '43.0447', lon: '25.6177', address: { town: 'Дебелец', state: 'Велико Търново' } }),
+        place({ lat: '43.0816', lon: '25.6284', address: { city: 'Велико Търново' } }),
+      ]);
+
+    it('asks for the street without the number after the request without «ул.», 1000 ms apart', async () => {
+      const { fetchStub, lookup, times } = setup((call) =>
+        call === 1 ? notFound() : call === 2 ? zlataritsa() : streetInTarnovo(),
+      );
+
+      const result = await settle(lookup('ул. Христо Смирненски 4', 'Велико Търново'), 2000);
+
+      expect(result).toEqual({ latitude: 43.0816, longitude: 25.6284 });
+      expect(streets(fetchStub)).toEqual(['ул. Христо Смирненски 4', 'Христо Смирненски 4', 'Христо Смирненски']);
+      expect(times[1] - times[0]).toBeGreaterThanOrEqual(1000);
+      expect(times[2] - times[1]).toBeGreaterThanOrEqual(1000);
+    });
+
+    it('asks for the street without the number second when there is no street type', async () => {
+      const { fetchStub, lookup } = setup((call) => (call === 1 ? zlataritsa() : streetInTarnovo()));
+
+      const result = await settle(lookup('Христо Смирненски 4', 'Велико Търново'));
+
+      expect(result).toEqual({ latitude: 43.0816, longitude: 25.6284 });
+      expect(streets(fetchStub)).toEqual(['Христо Смирненски 4', 'Христо Смирненски']);
+    });
+
+    it.each([
+      ['Витоша 4А', 'Витоша'],
+      ['Витоша 12-14', 'Витоша'],
+      ['Шипка 3/5', 'Шипка'],
+      ['6-ти септември 5', '6-ти септември'],
+    ])('removes the number from «%s»', async (address, withoutNumber) => {
+      const { fetchStub, lookup } = setup((call) => (call === 1 ? notFound() : found()));
+
+      await settle(lookup(address, 'София'));
+
+      expect(streets(fetchStub)).toEqual([address, withoutNumber]);
+    });
+
+    it.each(['Христо Ботев', '6-ти септември'])('makes only one request for «%s», which has no type or number', async (address) => {
+      const { fetchStub, lookup } = setup(() => notFound());
+
+      await expect(settle(lookup(address, 'София'), 2000)).resolves.toBeNull();
+      expect(fetchStub).toHaveBeenCalledTimes(1);
+    });
+
+    it('caches the answer of the last request by the original address', async () => {
+      const { fetchStub, lookup } = setup((call) => (call < 3 ? notFound() : found()));
+
+      const first = await settle(lookup('ул. Витоша 1', 'София'), 2000);
+      const second = await settle(lookup('ул. Витоша 1', 'София'));
+
+      expect(first).toEqual({ latitude: 42.6977, longitude: 23.3219 });
+      expect(second).toEqual(first);
+      expect(fetchStub).toHaveBeenCalledTimes(3);
+    });
+
+    it('caches "not found" after all three requests', async () => {
+      const { fetchStub, lookup } = setup(() => notFound());
+
+      expect(await settle(lookup('ул. Никоя 99', 'София'), 2000)).toBeNull();
+      expect(await settle(lookup('ул. Никоя 99', 'София'))).toBeNull();
+      expect(fetchStub).toHaveBeenCalledTimes(3);
+    });
+
+    it('throws GEOCODER_UNAVAILABLE when the last request fails', async () => {
+      const { lookup } = setup((call) => (call < 3 ? notFound() : json({}, 500)));
+
+      const failed = lookup('ул. Витоша 1', 'София');
+      const assertion = expect(failed).rejects.toMatchObject(unavailable);
+      await vi.advanceTimersByTimeAsync(2000);
+      await assertion;
+    });
   });
 });
 

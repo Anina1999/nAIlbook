@@ -28,15 +28,16 @@ server/
       factories.ts          # createClient, createManicurist, createService, createBooking...
       auth.ts               # tokenFor(user), authHeader(user)
       dates.ts              # future Sofia dates and slot times
-    unit/                   # pure functions, no database: scheduling/, lib/time.ts
-    api/                    # Supertest, one file per area: auth, catalog, days-off, bookings
+    unit/                   # pure functions, no database: scheduling/, lib/time.ts, lib/geocoder.ts
+    api/                    # Supertest, one file per area: auth, catalog, days-off, bookings,
+                            # coordinates (the geocoder in registration and profile save)
 ```
 
 Name files `<area>.test.ts`. Use one `describe` per endpoint (`describe('POST /api/bookings')`) or per function, and write each `it` as a behaviour (`it('returns 409 SLOT_TAKEN when the slot overlaps')`).
 
 ## Vitest config
 
-- `test.env` sets `DATABASE_URL="file:./test.db"` and a fixed `JWT_SECRET="test-secret"`. These are test-only values, not secrets. `test.db` is ignored by the `*.db` rule in `.gitignore`.
+- `test.env` sets `DATABASE_URL="file:./test.db"`, a fixed `JWT_SECRET="test-secret"` and `GEOCODER="fake"`. These are test-only values, not secrets. `test.db` is ignored by the `*.db` rule in `.gitignore`.
 - `globalSetup` deletes any old `test.db` and runs `prisma migrate deploy` against it. The test database always matches the migrations.
 - `fileParallelism: false`, because all API test files share one SQLite file.
 
@@ -48,12 +49,29 @@ Name files `<area>.test.ts`. Use one `describe` per endpoint (`describe('POST /a
 
 ## Helpers
 
-- **Factories** take an optional overrides object and return the created row. `createManicurist()` also creates the profile, working hours Monday to Friday 09:00–18:00 and one 60-minute service, so a booking test needs one call.
+- **Factories** take an optional overrides object and return the created row. `createManicurist()` also creates the profile, working hours Monday to Friday 09:00–18:00 and one 60-minute service, so a booking test needs one call. The profile gets the studio coordinates `DEFAULT_COORDINATES` (exported, the centre of Sofia: 42.6977, 23.3219) unless `latitude` and `longitude` are passed. A test that creates a profile without the factory passes both too, because they are required.
 - `createBooking(client, manicurist, overrides)` inserts a booking of the manicurist's first service directly, without validation, so a test can set up past, started and cancelled bookings. The default start is next Monday at 10:00. `createDayOff(manicurist, date, { deletedAt? })` creates an active or a removed day off. `createService(manicurist, overrides)` adds one more service (default "Гел лак", 90 minutes, 4000 cents), or a removed one when `deletedAt` is passed.
 - **Auth:** `tokenFor(user)` and `authHeader(user)` sign a JWT through the app's own `signToken`, so the payload is always the app's `{ sub, role, tokenVersion }`. Pass a user row straight from a factory. Only the auth tests go through `/register` and `/login`. Every other test uses `tokenFor`. The one exception is a flow test that has to start with a real registration, such as the catalog test where a newly registered manicurist appears in search only after adding the first service (approved 2026-10-29); it uses the token that `/register` returns.
 - Passwords in factories are hashed with a low bcrypt cost (4) to keep tests fast. Every factory user has the password `TEST_PASSWORD`.
 - **Races** are tested on the service, not through HTTP. Supertest requests reach the database one after another, so an HTTP race test passes even without the transaction. `tests/api/bookings-race.test.ts` calls `createBooking` several times at once and expects one booking and `SLOT_TAKEN` for the rest; it fails when the transaction is removed. `tests/api/days-off-race.test.ts` does the same for `markDayOff` against `createBooking` (a booking or the day off, never both) and for `markDayOff` against itself (one `ALREADY_DAY_OFF` for each loser, one reused row for a removed date).
 - Code that needs a role check but has no real endpoint yet is tested on a small Express app built inside the test file, never on a fake route added to `app`.
+
+## The geocoder in tests
+
+- **No test calls the network.** `GEOCODER=fake` in `vitest.config.ts` (and in the E2E `webServer.env`) makes `geocode()` the fake: the centre of a known city (София, Пловдив, Велико Търново, Варна, Бургас), else the centre of Bulgaria. Two words in the address simulate the failures, ignoring case: «ненамерен» → not found (`400 VALIDATION_ERROR` on `address`), «недостъпен» → `503 GEOCODER_UNAVAILABLE`.
+- **Expected coordinates** come from the fake itself through `vi.importActual` (`fakeCoordinates()` in `tests/api/coordinates.test.ts`), not from numbers copied into the test.
+- **The spy.** A test that checks whether the geocoder was called wraps the real module, so the fake still answers:
+
+  ```ts
+  vi.mock('../../src/lib/geocoder.js', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../src/lib/geocoder.js')>();
+    return { ...actual, geocode: vi.fn(actual.geocode) };
+  });
+  const geocodeSpy = vi.mocked(geocode); // mockClear() in beforeEach
+  ```
+
+  `vi.mock` applies to the whole file, so these tests live in their own file, `tests/api/coordinates.test.ts`, and `auth.test.ts` and `catalog.test.ts` run the plain fake. Like the auth tests, it registers through `/register`.
+- **The Nominatim client** is unit-tested in `tests/unit/geocoder.test.ts` through `createNominatimGeocoder({ fetch, userAgent })`, with a `vi.fn` stub for `fetch` returning real `Response` objects, and `vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })` for the 1000 ms spacing and the 5 s timeout. The client must use only those timers (not `AbortSignal.timeout` or `performance.now`), and the timeout stub rejects when `init.signal` aborts. Each test builds its own instance, so the queue and the cache start empty.
 
 ## Dates and time
 

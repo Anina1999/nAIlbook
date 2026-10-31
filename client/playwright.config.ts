@@ -32,6 +32,8 @@ export default defineConfig({
         JWT_SECRET: 'e2e-secret',
         PORT: String(API_PORT),
         CLIENT_ORIGIN: CLIENT_URL,
+        // The fake geocoder: E2E never calls Nominatim.
+        GEOCODER: 'fake',
       },
     },
     {

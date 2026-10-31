@@ -13,7 +13,8 @@ The database is SQLite through Prisma. The schema lives in `server/prisma/schema
 User              id, email (unique), passwordHash, name, phone,
                   role (CLIENT | MANICURIST | ADMIN), tokenVersion (Int, default 0),
                   createdAt, updatedAt
-ManicuristProfile userId (PK, FK User), city, address, bio, imageUrl?, updatedAt
+ManicuristProfile userId (PK, FK User), city, address, latitude, longitude (Float),
+                  bio, imageUrl?, updatedAt
 Service           id, manicuristId (FK), name, description?, durationMin, priceCents, updatedAt,
                   deletedAt?
 WorkingHours      id, manicuristId (FK), weekday (0–6, 0 = Sunday), startMin, endMin, updatedAt
@@ -44,8 +45,8 @@ Booking           id, clientId (FK), manicuristId (FK), serviceId (FK),
 - **Booking snapshot.** When a booking is created, copy the service's `name` and `priceCents` into `serviceName` and `priceCents`. Show and report these, not the current service values, so later price or name changes do not rewrite history. The duration is already fixed by `startAt` and `endAt`.
 - **Days off are soft-deleted.** Removing a day off sets `deletedAt`. Every read of days off (slots, booking validation, the public list, `/me/days-off`) filters `deletedAt: null`. Marking a date that has a removed row clears `deletedAt` on that row instead of inserting, because `(manicuristId, date)` is unique.
 - **Services are soft-deleted.** Removing a service sets `deletedAt`, because bookings point to it with a foreign key and keep their own snapshot. Every read of services filters `deletedAt: null`: search, the public manicurist page, the profile returned by `PUT /api/me/profile`, the ownership check before an edit or a removal, slots and booking validation. A removed service is answered with `404 NOT_FOUND`. The seed creates only active services.
-- **Prisma is limited to modules.** Prisma calls belong in `service.ts` files and never in `server/src/scheduling/`.
-- **Schema changes:**
+- **Studio coordinates.** `latitude` and `longitude` are required `Float`s with no default, in degrees (WGS 84), numbers in JSON. They are written only from the geocoder (registration, and a profile save that changes the city or the address; see `api-conventions`) or by hand in the seed, never typed by a user.
+- **Prisma is limited to modules.** Prisma calls belong in `service.ts` files and in the lookups a middleware does before its handler (`requireFreeEmail`, `geocodeStudio`), and never in `server/src/scheduling/`.- **Schema changes:**
   - change the schema with `npx prisma migrate dev --name <change>`;
   - name every migration for what it does, in `snake_case`, starting with a verb: `add_booking_price_snapshot`, `add_deleted_at_to_day_off`, `rename_service_price`. Never use a generic name such as `init`, `update`, `changes` or `fix`. Prisma adds the timestamp in front;
   - never edit applied migrations;
@@ -54,10 +55,12 @@ Booking           id, clientId (FK), manicuristId (FK), serviceId (FK),
 ## Seed
 
 The seed must give a working demo right after install:
-- about 5 manicurists in 2–3 cities (for example Sofia, Plovdiv and Veliko Tarnovo), each with 2–4 services and working hours. The demo manicurist (Мария) is the exception: she has 7, with durations off the 30-minute grid (40 minutes) and long ones (90 and 180 minutes), for the packed day below;
+- 6 manicurists in 4 cities (two each in София and Пловдив, one in Велико Търново, and Виктория Колева in Варна, ул. „Морска“ 7, with 3 services and Monday–Friday hours), each with 2–4 services and working hours. The demo manicurist (Мария) is the exception: she has 7, with durations off the 30-minute grid (40 minutes) and long ones (90 and 180 minutes), for the packed day below;
 - at least one future day off;
 - one client account with a past booking and an upcoming booking. The upcoming 11:00 booking with Мария stays the client's first upcoming booking with her, because the Postman collection finds it that way;
 - a packed day: Мария's first working day after the date of that 11:00 booking that is not the day off, booked by the demo client back to back: 09:00 Класически маникюр (to 10:00), 10:00 Педикюр (to 11:30), 11:30 Парафинова терапия за ръце (40 minutes, to 12:10), 14:00 Ноктопластика (to 17:00) and 17:00 Смяна на дизайн / счупен нокът (to 17:30). So 12:10, off the grid, is offered as a start. The seed throws if the packed day falls on the day off or on the date of the 11:00 booking.
+
+Every seed manicurist has hand-written studio coordinates near the city centre, with the two Sofia studios about 1 km apart, so the map shows separate pins. The seed never calls the geocoder.
 
 Seed bookings get `endAt` the way the API computes it: the UTC start plus the service duration.
 

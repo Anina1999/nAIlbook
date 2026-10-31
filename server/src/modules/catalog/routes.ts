@@ -1,7 +1,18 @@
 import { Router } from 'express';
 import { parse } from '../../lib/validate.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
-import { dayOffBody, daysOffQuery, idParams, profileBody, searchQuery, serviceBody, workingHoursBody } from './schemas.js';
+import { geocodeStudio } from '../../middleware/geocode-studio.js';
+import { validateBody } from '../../middleware/validate.js';
+import {
+  dayOffBody,
+  daysOffQuery,
+  idParams,
+  profileBody,
+  searchQuery,
+  serviceBody,
+  workingHoursBody,
+  type ProfileInput,
+} from './schemas.js';
 import * as catalog from './service.js';
 
 // Mounted at /api/manicurists, next to the slots router. Public.
@@ -27,9 +38,10 @@ catalogRouter.get('/:id/days-off', async (req, res) => {
 // checked in the service.
 export const meRouter = Router();
 
-meRouter.put('/profile', requireAuth, requireRole('MANICURIST'), async (req, res) => {
-  const input = parse(profileBody, req.body);
-  res.json({ manicurist: await catalog.updateProfile(req.user!.id, input) });
+// The geocoder (an outside call) runs last, and only when the city or the address changed.
+meRouter.put('/profile', requireAuth, requireRole('MANICURIST'), validateBody(profileBody), geocodeStudio, async (req, res) => {
+  const input: ProfileInput = req.body;
+  res.json({ manicurist: await catalog.updateProfile(req.user!.id, input, req.coordinates) });
 });
 
 meRouter.post('/services', requireAuth, requireRole('MANICURIST'), async (req, res) => {

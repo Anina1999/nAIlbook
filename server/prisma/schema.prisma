@@ -46,6 +46,10 @@ model ManicuristProfile {
   userId    Int      @id
   city      String
   address   String
+  // The studio's point on the map, found with the geocoder from city and
+  // address on registration and on a profile save that changes either.
+  latitude  Float
+  longitude Float
   bio       String
   imageUrl  String?
   updatedAt DateTime @updatedAt

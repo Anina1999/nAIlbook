@@ -42,11 +42,11 @@ The detailed rules live in project skills under [.claude/skills/](../.claude/ski
 
 ### 2. Data & Catalog
 
-- **Owns:** `server/prisma/` (schema, migrations, seed) and `server/src/modules/catalog/`.
+- **Owns:** `server/prisma/` (schema, migrations, seed), `server/src/modules/catalog/`, `server/src/lib/geocoder.ts` (Nominatim, with a fake for tests and E2E) and the request guards in `server/src/middleware/` (`validateBody`, `requireFreeEmail`, `geocodeStudio`).
 - **Exposes:**
-  - search and the public manicurist page;
+  - search and the public manicurist page, both with the studio's coordinates for the map;
   - a public list of days off;
-  - endpoints where a manicurist manages their own profile, services, working hours and days off.
+  - endpoints where a manicurist manages their own profile, services, working hours and days off; registration and a profile save find the studio's coordinates from its address, as the last step of the request.
 - **Done when:** the seed gives a working demo, and API tests cover ownership (403), validation (400) and the day-off conflict (409).
 
 ### 3. Scheduling & Booking engine ⭐

@@ -9,6 +9,8 @@ export default defineConfig({
     env: {
       DATABASE_URL: TEST_DATABASE_URL,
       JWT_SECRET: 'test-secret',
+      // Tests never call Nominatim: src/lib/geocoder.ts uses its fake.
+      GEOCODER: 'fake',
     },
     globalSetup: ['tests/setup/global-setup.ts'],
     // All API test files share one SQLite file.

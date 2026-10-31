@@ -3,6 +3,7 @@
 // (deletedAt set) are never read.
 import type { Prisma } from '../../generated/prisma/client.js';
 import { AppError } from '../../lib/errors.js';
+import type { Coordinates } from '../../lib/geocoder.js';
 import { prisma } from '../../lib/prisma.js';
 import { sofiaDayRange, todayInSofia } from '../../lib/time.js';
 import { canMarkDayOff } from '../../scheduling/day-off.js';
@@ -27,6 +28,8 @@ const hoursSelect = { weekday: true, startMin: true, endMin: true } satisfies Pr
 const manicuristSelect = {
   city: true,
   address: true,
+  latitude: true,
+  longitude: true,
   bio: true,
   imageUrl: true,
   user: { select: { id: true, name: true, email: true, phone: true } },
@@ -61,6 +64,8 @@ export async function searchManicurists(filters: SearchFilters) {
     where: { services: { some: activeServices } },
     select: {
       city: true,
+      latitude: true,
+      longitude: true,
       imageUrl: true,
       user: { select: { id: true, name: true } },
       services: { where: activeServices, select: { id: true, name: true, durationMin: true, priceCents: true } },
@@ -80,11 +85,21 @@ export async function getManicurist(id: number) {
   return toManicurist(profile);
 }
 
-// Name and phone live in User, the rest in ManicuristProfile; both are saved together.
-export async function updateProfile(userId: number, { name, phone, ...profile }: ProfileInput) {
+// Name and phone live in User, the rest in ManicuristProfile; both are saved
+// together. coordinates come from geocodeStudio when the city or the address
+// changed; undefined keeps the saved ones.
+export async function updateProfile(
+  userId: number,
+  { name, phone, ...profile }: ProfileInput,
+  coordinates?: Coordinates,
+) {
   return prisma.$transaction(async (tx) => {
     await tx.user.update({ where: { id: userId }, data: { name, phone } });
-    const row = await tx.manicuristProfile.update({ where: { userId }, data: profile, select: manicuristSelect });
+    const row = await tx.manicuristProfile.update({
+      where: { userId },
+      data: { ...profile, ...coordinates },
+      select: manicuristSelect,
+    });
     return toManicurist(row);
   });
 }

@@ -1,8 +1,10 @@
 import bcrypt from 'bcrypt';
 import { Prisma, type Role } from '../../generated/prisma/client.js';
 import { AppError } from '../../lib/errors.js';
+import type { Coordinates } from '../../lib/geocoder.js';
 import { signToken } from '../../lib/jwt.js';
 import { prisma } from '../../lib/prisma.js';
+import { emailTaken } from '../../middleware/require-free-email.js';
 import type { LoginInput, RegisterInput } from './schemas.js';
 
 const BCRYPT_COST = 10;
@@ -14,14 +16,15 @@ const DUMMY_HASH = bcrypt.hashSync('dummy-password-for-timing', BCRYPT_COST);
 // The only user fields the API returns. Never passwordHash or tokenVersion.
 const publicUser = { id: true, email: true, name: true, phone: true, role: true } as const;
 
-export async function register(input: RegisterInput) {
-  const exists = await prisma.user.findUnique({ where: { email: input.email }, select: { id: true } });
-  if (exists) throw emailTaken();
+// The route has already checked that the email is free (requireFreeEmail) and
+// found the studio coordinates of a manicurist (geocodeStudio).
+export async function register(input: RegisterInput, coordinates?: Coordinates) {
+  if (input.role === 'MANICURIST' && !coordinates) throw new Error('A manicurist is registered with coordinates');
 
   const passwordHash = await bcrypt.hash(input.password, BCRYPT_COST);
   const profile =
     input.role === 'MANICURIST'
-      ? { create: { city: input.city, address: input.address, bio: input.bio } }
+      ? { create: { city: input.city, address: input.address, bio: input.bio, ...coordinates! } }
       : undefined;
 
   try {
@@ -71,8 +74,4 @@ export async function logout(userId: number) {
 function session<T extends { id: number; role: Role; tokenVersion: number }>(user: T) {
   const { tokenVersion: _, ...rest } = user;
   return { token: signToken(user), user: rest };
-}
-
-function emailTaken() {
-  return new AppError('EMAIL_TAKEN', 'Този имейл вече е регистриран.');
 }

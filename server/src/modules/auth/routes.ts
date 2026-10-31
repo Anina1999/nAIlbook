@@ -1,14 +1,18 @@
 import { Router } from 'express';
 import { parse } from '../../lib/validate.js';
 import { requireAuth } from '../../middleware/auth.js';
-import { loginSchema, registerSchema } from './schemas.js';
+import { geocodeStudio } from '../../middleware/geocode-studio.js';
+import { requireFreeEmail } from '../../middleware/require-free-email.js';
+import { validateBody } from '../../middleware/validate.js';
+import { loginSchema, registerSchema, type RegisterInput } from './schemas.js';
 import * as auth from './service.js';
 
 export const authRouter = Router();
 
-authRouter.post('/register', async (req, res) => {
-  const input = parse(registerSchema, req.body);
-  res.status(201).json(await auth.register(input));
+// The geocoder (an outside call) runs last, only for a valid body with a free email.
+authRouter.post('/register', validateBody(registerSchema), requireFreeEmail, geocodeStudio, async (req, res) => {
+  const input: RegisterInput = req.body;
+  res.status(201).json(await auth.register(input, req.coordinates));
 });
 
 authRouter.post('/login', async (req, res) => {

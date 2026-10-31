@@ -1,7 +1,9 @@
-// Demo data: 5 manicurists in 3 cities, one client with a past booking, an
+// Demo data: 6 manicurists in 4 cities, one client with a past booking, an
 // upcoming one and a packed day of five back-to-back bookings with Maria (one
 // ends at 12:10, so 12:10 is offered as a start), and one future day off. Dates
 // are relative to today in Sofia, so the demo stays valid whenever it runs.
+// The studio coordinates are written by hand near each city centre (the two
+// Sofia studios about 1 km apart), so the seed never calls the geocoder.
 // Safe to run again: it clears all rows first.
 import bcrypt from 'bcrypt';
 import { prisma } from '../src/lib/prisma.js';
@@ -40,6 +42,8 @@ type ManicuristSeed = {
   phone: string;
   city: string;
   address: string;
+  latitude: number;
+  longitude: number;
   bio: string;
   weekdays: number[];
   startMin: number;
@@ -56,6 +60,8 @@ const manicurists: ManicuristSeed[] = [
     phone: '0888 000 001',
     city: 'София',
     address: 'ул. „Примерна“ 12',
+    latitude: 42.6934,
+    longitude: 23.3196,
     bio: 'Класически и гел маникюр, 8 години опит.',
     weekdays: MON_FRI,
     startMin: h(9),
@@ -76,6 +82,8 @@ const manicurists: ManicuristSeed[] = [
     phone: '0888 000 002',
     city: 'София',
     address: 'бул. „Демо“ 45',
+    latitude: 42.699,
+    longitude: 23.3315,
     bio: 'Маникюр и нокътен дизайн.',
     weekdays: [2, 3, 4, 5, 6],
     startMin: h(10),
@@ -91,6 +99,8 @@ const manicurists: ManicuristSeed[] = [
     phone: '0888 000 003',
     city: 'Пловдив',
     address: 'ул. „Тестова“ 3',
+    latitude: 42.144,
+    longitude: 24.7495,
     bio: 'Спокойна обстановка и качествени продукти.',
     weekdays: MON_FRI,
     startMin: h(8, 30),
@@ -108,6 +118,8 @@ const manicurists: ManicuristSeed[] = [
     phone: '0888 000 004',
     city: 'Пловдив',
     address: 'ул. „Образец“ 27',
+    latitude: 42.1395,
+    longitude: 24.739,
     bio: 'Работя следобед, удобно след работа.',
     weekdays: [1, 3, 5],
     startMin: h(12),
@@ -123,6 +135,8 @@ const manicurists: ManicuristSeed[] = [
     phone: '0888 000 005',
     city: 'Велико Търново',
     address: 'ул. „Демонстрационна“ 8',
+    latitude: 43.0812,
+    longitude: 25.629,
     bio: 'Маникюр и педикюр в центъра на града.',
     weekdays: MON_FRI,
     startMin: h(9),
@@ -130,6 +144,24 @@ const manicurists: ManicuristSeed[] = [
     services: [
       { name: 'Класически маникюр', durationMin: 60, priceCents: 1800 },
       { name: 'Педикюр', durationMin: 90, priceCents: 2800 },
+    ],
+  },
+  {
+    name: 'Виктория Колева',
+    email: 'viktoria@example.com',
+    phone: '0888 000 006',
+    city: 'Варна',
+    address: 'ул. „Морска“ 7',
+    latitude: 43.205,
+    longitude: 27.923,
+    bio: 'Маникюр и педикюр близо до Морската градина.',
+    weekdays: MON_FRI,
+    startMin: h(10),
+    endMin: h(18),
+    services: [
+      { name: 'Класически маникюр', durationMin: 60, priceCents: 2200 },
+      { name: 'Гел лак', durationMin: 90, priceCents: 3200 },
+      { name: 'Педикюр', durationMin: 60, priceCents: 2800 },
     ],
   },
 ];
@@ -168,6 +200,8 @@ async function main() {
           create: {
             city: m.city,
             address: m.address,
+            latitude: m.latitude,
+            longitude: m.longitude,
             bio: m.bio,
             services: { create: m.services },
             workingHours: {

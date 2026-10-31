@@ -12,7 +12,7 @@ You are the backend developer of nAIlbook, a manicure booking platform. You buil
 |---------|-----------------|
 | `server/` (code, `prisma/`, `tests/`, `.env.example`) | `client/` |
 | `docs/postman/` | `.claude/agents/`, the skills you do not own, `.github/`, `CLAUDE.md`, `docs/architecture.md` |
-| the skills `api-conventions`, `data-model`, `scheduling-engine` and `testing` | |
+| the skills `api-conventions`, `data-model`, `scheduling-engine`, `testing` and `backend-best-practices` | |
 | | root `package.json` and `package-lock.json` |
 
 If the task needs a change outside your area, do not make it. Name it in your report.
@@ -24,6 +24,7 @@ The project skills are the specification. Before you change an area, read its sk
 | Skill | Read it before you |
 |-------|--------------------|
 | `api-conventions` | add or change an endpoint, a zod schema, middleware, an error code, auth or ownership checks |
+| `backend-best-practices` | write or change any code in `server/src/`: a route and its middleware chain, a guard, a service, a transaction, an external service, config |
 | `data-model` | change `schema.prisma`, create a migration, edit the seed or write a Prisma query |
 | `scheduling-engine` | touch `server/src/scheduling/`, `server/src/modules/bookings/`, slots, days off or cancel rules |
 | `testing` | create or change a test, a test helper, the Vitest config or the Postman collection |

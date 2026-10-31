@@ -27,12 +27,29 @@ export function createClient(overrides: UserOverrides = {}) {
   });
 }
 
-type ManicuristOverrides = UserOverrides & { city?: string; address?: string; bio?: string };
+// The default studio coordinates of createManicurist: the centre of Sofia.
+export const DEFAULT_COORDINATES = { latitude: 42.6977, longitude: 23.3219 } as const;
 
-// A manicurist ready to be booked: profile, Monday–Friday 09:00–18:00 and
-// one 60-minute service. Returns the user with profile, hours and services.
+type ManicuristOverrides = UserOverrides & {
+  city?: string;
+  address?: string;
+  bio?: string;
+  latitude?: number;
+  longitude?: number;
+};
+
+// A manicurist ready to be booked: profile with studio coordinates,
+// Monday–Friday 09:00–18:00 and one 60-minute service. Returns the user
+// with profile, hours and services.
 export function createManicurist(overrides: ManicuristOverrides = {}) {
-  const { city = 'София', address = 'ул. Тестова 1', bio = '', ...user } = overrides;
+  const {
+    city = 'София',
+    address = 'ул. Тестова 1',
+    bio = '',
+    latitude = DEFAULT_COORDINATES.latitude,
+    longitude = DEFAULT_COORDINATES.longitude,
+    ...user
+  } = overrides;
   return prisma.user.create({
     data: {
       email: nextEmail('manicurist'),
@@ -46,6 +63,8 @@ export function createManicurist(overrides: ManicuristOverrides = {}) {
           city,
           address,
           bio,
+          latitude,
+          longitude,
           workingHours: {
             create: [1, 2, 3, 4, 5].map((weekday) => ({ weekday, startMin: 9 * 60, endMin: 18 * 60 })),
           },

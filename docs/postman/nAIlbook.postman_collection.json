@@ -91,7 +91,15 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('201 Created', () => pm.response.to.have.status(201));",
-                  "pm.test('role is MANICURIST', () => pm.expect(pm.response.json().user.role).to.eql('MANICURIST'));"
+                  "pm.test('role is MANICURIST', () => pm.expect(pm.response.json().user.role).to.eql('MANICURIST'));",
+                  "pm.sendRequest(`${pm.collectionVariables.get('baseUrl')}/api/manicurists/${pm.response.json().user.id}`, (err, res) => {",
+                  "  pm.test('the geocoder saved the studio coordinates as numbers', () => {",
+                  "    pm.expect(err).to.be.null;",
+                  "    const { manicurist } = res.json();",
+                  "    pm.expect(manicurist.latitude).to.be.a('number');",
+                  "    pm.expect(manicurist.longitude).to.be.a('number');",
+                  "  });",
+                  "});"
                 ]
               }
             }
@@ -101,7 +109,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"manicurist-{{$timestamp}}@example.com\",\n  \"password\": \"secret123\",\n  \"name\": \"Нова Маникюристка\",\n  \"phone\": \"0888 300 400\",\n  \"role\": \"MANICURIST\",\n  \"city\": \"Пловдив\",\n  \"address\": \"ул. Тестова 10\",\n  \"bio\": \"Маникюр и гел лак.\"\n}"
+              "raw": "{\n  \"email\": \"manicurist-{{$timestamp}}@example.com\",\n  \"password\": \"secret123\",\n  \"name\": \"Нова Маникюристка\",\n  \"phone\": \"0888 300 400\",\n  \"role\": \"MANICURIST\",\n  \"city\": \"София\",\n  \"address\": \"бул. „Витоша“ 1\",\n  \"bio\": \"Маникюр и гел лак.\"\n}"
             },
             "url": "{{baseUrl}}/api/auth/register"
           }
@@ -391,7 +399,8 @@
                   "pm.test('\"софия\" finds only manicurists in София', () => { pm.expect(manicurists).to.not.be.empty; manicurists.forEach((m) => pm.expect(m.city).to.eql('София')); });",
                   "pm.test('every result offers a service with \"гел\" in its name', () => manicurists.forEach((m) => pm.expect(m.services.some((s) => s.name.toLowerCase().includes('гел'))).to.be.true));",
                   "pm.test('finds the demo manicurist', () => pm.expect(manicurists.map((m) => m.id)).to.include(Number(pm.collectionVariables.get('manicuristId'))));",
-                  "pm.test('has no email', () => manicurists.forEach((m) => pm.expect(m).to.not.have.property('email')));"
+                  "pm.test('has no email', () => manicurists.forEach((m) => pm.expect(m).to.not.have.property('email')));",
+                  "pm.test('every result has studio coordinates as numbers', () => manicurists.forEach((m) => { pm.expect(m.latitude).to.be.a('number'); pm.expect(m.longitude).to.be.a('number'); }));"
                 ]
               }
             }
@@ -414,7 +423,8 @@
                   "const { manicurist } = pm.response.json();",
                   "pm.test('is the demo manicurist', () => pm.expect(manicurist.name).to.eql('Мария Петрова'));",
                   "pm.test('has services and working hours', () => { pm.expect(manicurist.services).to.not.be.empty; pm.expect(manicurist.workingHours).to.not.be.empty; });",
-                  "pm.test('shows the email', () => pm.expect(manicurist.email).to.eql('maria@example.com'));"
+                  "pm.test('shows the email', () => pm.expect(manicurist.email).to.eql('maria@example.com'));",
+                  "pm.test('has studio coordinates as numbers', () => { pm.expect(manicurist.latitude).to.be.a('number'); pm.expect(manicurist.longitude).to.be.a('number'); });"
                 ]
               }
             }
@@ -470,6 +480,35 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Мария Петрова\",\n  \"phone\": \"0888 000 001\",\n  \"city\": \"София\",\n  \"address\": \"ул. „Примерна“ 12\",\n  \"bio\": \"Класически и гел маникюр, 8 години опит.\"\n}"
+            },
+            "url": "{{baseUrl}}/api/me/profile"
+          }
+        },
+        {
+          "name": "Update profile with an address that is not found (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "const { error } = pm.response.json();",
+                  "pm.test('error code is VALIDATION_ERROR', () => pm.expect(error.code).to.eql('VALIDATION_ERROR'));",
+                  "pm.test('the issue is on address', () => pm.expect(error.details.map((d) => d.path)).to.eql(['address']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{manicuristToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Мария Петрова\",\n  \"phone\": \"0888 000 001\",\n  \"city\": \"София\",\n  \"address\": \"ул. Несъществуваща 99999\",\n  \"bio\": \"Класически и гел маникюр, 8 години опит.\"\n}"
             },
             "url": "{{baseUrl}}/api/me/profile"
           }

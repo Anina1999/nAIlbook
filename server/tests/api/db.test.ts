@@ -20,6 +20,8 @@ describe('test database', () => {
           create: {
             city: 'София',
             address: 'a',
+            latitude: 42.6977,
+            longitude: 23.3219,
             bio: 'b',
             services: { create: { name: 'S', durationMin: 60, priceCents: 2500 } },
             workingHours: { create: { weekday: 1, startMin: 540, endMin: 1080 } },

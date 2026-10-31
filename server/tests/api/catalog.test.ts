@@ -4,7 +4,13 @@ import { app } from '../../src/app.js';
 import { authHeader } from '../helpers/auth.js';
 import { nextWeekday, slotAt } from '../helpers/dates.js';
 import { prisma, resetDb } from '../helpers/db.js';
-import { createBooking, createClient, createManicurist, createService } from '../helpers/factories.js';
+import {
+  DEFAULT_COORDINATES,
+  createBooking,
+  createClient,
+  createManicurist,
+  createService,
+} from '../helpers/factories.js';
 
 beforeEach(() => resetDb());
 afterAll(() => prisma.$disconnect());
@@ -30,6 +36,7 @@ describe('GET /api/manicurists', () => {
           id: sofia.id,
           name: 'Ана Петрова',
           city: 'София',
+          ...DEFAULT_COORDINATES,
           imageUrl: null,
           services: [
             { id: gel.id, name: 'Гел лак', durationMin: 90, priceCents: 4000 },
@@ -40,6 +47,7 @@ describe('GET /api/manicurists', () => {
           id: plovdiv.id,
           name: 'Петя Димова',
           city: 'Пловдив',
+          ...DEFAULT_COORDINATES,
           imageUrl: null,
           services: [{ id: plovdiv.profile!.services[0].id, name: 'Класически маникюр', durationMin: 60, priceCents: 2500 }],
         },
@@ -139,6 +147,18 @@ describe('GET /api/manicurists', () => {
     expect(names(res)).toEqual(['Петя']);
   });
 
+  it('carries the studio coordinates of each manicurist as numbers', async () => {
+    const varna = await createManicurist({ name: 'Ана', city: 'Варна', latitude: 43.2141, longitude: 27.9147 });
+
+    const res = await search();
+
+    expect(res.status).toBe(200);
+    expect(res.body.manicurists).toHaveLength(1);
+    expect(res.body.manicurists[0]).toMatchObject({ id: varna.id, latitude: 43.2141, longitude: 27.9147 });
+    expect(typeof res.body.manicurists[0].latitude).toBe('number');
+    expect(typeof res.body.manicurists[0].longitude).toBe('number');
+  });
+
   it('returns 400 VALIDATION_ERROR when a parameter is repeated', async () => {
     const res = await request(app).get('/api/manicurists?city=София&city=Пловдив');
 
@@ -171,6 +191,7 @@ describe('GET /api/manicurists/:id', () => {
         phone: '0888123456',
         city: 'София',
         address: 'ул. Розова 5',
+        ...DEFAULT_COORDINATES,
         bio: 'Десет години опит.',
         imageUrl: null,
         services: [
@@ -186,6 +207,17 @@ describe('GET /api/manicurists/:id', () => {
         workingHours: [1, 2, 3, 4, 5].map((weekday) => ({ weekday, startMin: 540, endMin: 1080 })),
       },
     });
+  });
+
+  it('carries the studio coordinates as numbers', async () => {
+    const manicurist = await createManicurist({ city: 'Варна', latitude: 43.2141, longitude: 27.9147 });
+
+    const res = await profile(manicurist.id);
+
+    expect(res.status).toBe(200);
+    expect(res.body.manicurist).toMatchObject({ latitude: 43.2141, longitude: 27.9147 });
+    expect(typeof res.body.manicurist.latitude).toBe('number');
+    expect(typeof res.body.manicurist.longitude).toBe('number');
   });
 
   it('leaves out a removed service', async () => {

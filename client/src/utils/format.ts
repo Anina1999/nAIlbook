@@ -66,3 +66,13 @@ export function formatDayMonth(date: string): string {
   const [, month, day] = date.split('-').map(Number);
   return `${day}.${month}`;
 }
+
+/** The first letters of the first two words, for an avatar: «Мария Петрова» → «МП». */
+export function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0].toLocaleUpperCase('bg-BG'))
+    .join('');
+}

@@ -8,6 +8,14 @@ function cardTitle(page: Page, name: string) {
   return page.getByRole('heading', { name, exact: true });
 }
 
+/**
+ * A card's title anywhere in the results carousel, also on a slide out of view: only
+ * the first cards are on screen, and Swiper keeps the others in the accessibility tree.
+ */
+function carouselCard(page: Page, name: string) {
+  return page.getByRole('region', { name: 'Маникюристи' }).getByRole('heading', { name, exact: true });
+}
+
 function hasSearch(params: Record<string, string>) {
   return (url: URL) =>
     url.pathname === '/' &&
@@ -41,7 +49,7 @@ test('a search by city and service is kept in the URL and after a reload', async
   await expect(page.getByLabel('Услуга')).toHaveValue('Педикюр');
   await expect(cardTitle(page, 'Ива Димитрова')).toBeVisible();
   await expect(cardTitle(page, 'Мария Петрова')).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Ива Димитрова' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Ива Димитрова', exact: true })).toHaveAttribute(
     'href',
     `/manicurists/${iva!.id}`,
   );
@@ -52,7 +60,10 @@ test('a search by city and service is kept in the URL and after a reload', async
 
   // The name link is stretched over the card, so a real click on the city text opens the page too.
   // A mouse click at the city's position is used, because the link covers the text on purpose.
-  const cityBox = await card.getByText('Пловдив', { exact: true }).boundingBox();
+  // The hero pushes the cards below a 720px viewport, and mouse.click does not scroll.
+  const city = card.getByText('Пловдив', { exact: true });
+  await city.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  const cityBox = await city.boundingBox();
   expect(cityBox).not.toBeNull();
   await page.mouse.click(cityBox!.x + cityBox!.width / 2, cityBox!.y + cityBox!.height / 2);
   await expect(page).toHaveURL((url) => url.pathname === `/manicurists/${iva!.id}`);
@@ -70,14 +81,16 @@ test('a search with no result offers to clear it and the cleared search shows th
 
   await expect(page).toHaveURL(hasSearch({}));
   await expect(page.getByLabel('Град')).toHaveValue('');
-  await expect(cardTitle(page, 'Мария Петрова')).toBeVisible();
-  await expect(cardTitle(page, 'Ива Димитрова')).toBeVisible();
+  // Sorted by name, so these two are beyond the first cards in view.
+  await expect(carouselCard(page, 'Мария Петрова')).toBeAttached();
+  await expect(carouselCard(page, 'Ива Димитрова')).toBeAttached();
 });
 
 test('at 375px the search has no horizontal scroll and works with the keyboard alone', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto('/');
-  await expect(cardTitle(page, 'Мария Петрова')).toBeVisible();
+  // At 375px one card is in view and Мария Петрова is the fifth.
+  await expect(carouselCard(page, 'Мария Петрова')).toBeAttached();
   expect(await horizontalOverflow(page)).toBe(0);
 
   const city = page.getByLabel('Град');

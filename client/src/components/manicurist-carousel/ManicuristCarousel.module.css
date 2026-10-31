@@ -1,0 +1,117 @@
+@reference "../../index.css";
+
+/* ui-design, Components, Carousel. No gap: the room around the cards comes from the
+   Swiper's own padding, 20px above and below them. */
+.carousel {
+  @apply flex flex-col;
+}
+
+.head {
+  @apply flex flex-wrap items-end justify-between gap-3;
+}
+
+.titleBlock {
+  @apply flex flex-col gap-1.5;
+}
+
+/* moon at the lightest point of the backdrop: 5.89 without the shadow. A tight line
+   box (one line high even when empty) keeps it 6px under the title, as in the design. */
+.counter {
+  @apply min-h-5 text-base leading-tight font-medium text-moon text-shadow-copy;
+}
+
+/* The arrows sit on the outer edges of the first and the last card in view, vertically
+   centred: 24px outside the card and 20px over it, which is only its padding, so no card
+   gives up room for them and «Запази час» keeps its full width. Pearl buttons with a
+   candy border, a little see-through at rest; on hover and focus they fill with
+   arrow-hover and grow a little in place (`scale`, which leaves Tailwind's `translate`
+   centring alone).
+   card-title on pearl: 11+; white on arrow-hover: 3.3 (an icon needs 3:1). */
+.viewport {
+  @apply relative;
+}
+
+.prev,
+.next {
+  @apply absolute top-1/2 z-20 flex size-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full;
+  @apply border border-candy text-card-title opacity-72;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-white) 95%, transparent) 0%,
+    color-mix(in srgb, var(--color-pearl) 85%, transparent) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 var(--color-white),
+    0 0 0 3px color-mix(in srgb, var(--color-candy) 20%, transparent),
+    0 4px 14px color-mix(in srgb, var(--color-glow-candy) 35%, transparent);
+}
+
+.prev {
+  @apply -left-6;
+}
+
+.next {
+  @apply -right-6;
+}
+
+.prev:hover,
+.prev:focus-visible,
+.next:hover,
+.next:focus-visible {
+  @apply border-white text-white opacity-100;
+  background: var(--color-arrow-hover);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--color-candy) 30%, transparent),
+    0 0 16px color-mix(in srgb, var(--color-candy) 80%, transparent),
+    0 8px 18px color-mix(in srgb, var(--color-glow-candy) 50%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .prev,
+  .next {
+    transition:
+      opacity 0.2s ease,
+      scale 0.2s ease,
+      background 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .prev:hover,
+  .prev:focus-visible,
+  .next:hover,
+  .next:focus-visible {
+    scale: 1.08;
+  }
+}
+
+/* Swiper's padding leaves room for the active card's lift and the glow, so they are not
+   cut; the negative side margins keep the cards on the column's edges. */
+.viewport :global(.swiper) {
+  margin: 0 -20px;
+  padding: 20px;
+}
+
+/* All slides as tall as the tallest, so «Запази час» lines up at the bottom. */
+.viewport :global(.swiper-slide) {
+  height: auto;
+}
+
+.dots {
+  @apply flex justify-center gap-2;
+}
+
+/* Only the colour changes; the width never animates. */
+.dot {
+  @apply block h-2 w-2 rounded-full bg-white/30;
+  @apply motion-safe:transition-colors motion-safe:duration-200;
+}
+
+.dotShown {
+  @apply bg-dot;
+}
+
+.dotActive {
+  @apply w-6;
+}

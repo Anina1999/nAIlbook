@@ -15,3 +15,10 @@
 .secondary {
   @apply bg-raised text-ink border border-field;
 }
+
+/* The primary button on the glass search panel: 44px high, like its inputs.
+   white on accent: 7.38. On the night the focus outline is white. */
+.search {
+  @apply min-h-11 shrink-0 rounded-control border border-transparent bg-accent px-8 text-base font-semibold text-white enabled:hover:bg-accent-strong;
+  @apply focus-visible:outline-white;
+}

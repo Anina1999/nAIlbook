@@ -101,6 +101,7 @@ What a user can share, reload or go Back to lives in the URL: the search (`/?cit
   ```
 
   The link's accessible name stays the name alone (an `<a>` around the card would read every line of it), there is one Tab stop per card, and the whole card is clickable. A card with its own buttons (a favourite, a cancel) puts them above the pseudo-element with `relative z-10`.
+- **A second link on the card** goes above the stretched one the same way, with `relative z-10`, and gets its own accessible name: «Запази час» on the manicurist card links to `/manicurists/:id#schedule` with `aria-label="Запази час при <име>"`, because «Запази час» alone would read the same on every card. Its visible text starts the name, so a voice user can say what they see.
 
 ## 10. Carousel (Swiper)
 
@@ -108,9 +109,14 @@ The results carousel uses Swiper (`swiper/react`) with these rules:
 
 - **Own arrow buttons**, real `<button>` elements with Bulgarian `aria-label`s («Предишни», «Следващи»), connected through `ref`s and `onSwiper` (or `navigation={{ prevEl, nextEl }}` with the elements from refs), not by a CSS selector string.
 - **The `A11y` and `Keyboard` modules are on**, with Bulgarian messages, so the slides are announced and the arrow keys work.
-- **No `loop`:** with few results it duplicates the slides and confuses the active index that the map follows.
+- **No `loop`; `rewind` is allowed.** `loop` duplicates the slides when there are few results and confuses the active index that the map follows. `rewind: true` takes the arrows from the last view back to the first (and back from the first to the last) with no copies, so the arrows are never disabled.
 - **Slides per view from `breakpoints`**: 1 on a phone, 2 from `sm`, 3 from `lg`, with `spaceBetween` from the spacing scale.
 - **Room inside the carousel** (padding on `:global(.swiper)`) so the card's lift and shadow are not cut.
+- **Equal slide heights:** `height: auto` on `:global(.swiper-slide)` and `h-full` on the card, so every card is as tall as the tallest and its last line («Запази час») lines up.
+- **The counter** is a `role="status"` line with the cards in view: «Показани 1–3 от 6», or «Показана 1 от 6» when one card is in view (start = activeIndex + 1, end = min(activeIndex + perView, n); perView is `swiper.params.slidesPerView`, read again on `onBreakpoint`). Swiper's activeIndex can pass the last view (rewinding back to the end, a card focused with Tab), so the first card in view is `min(activeIndex, n − perView)`; the counter, the dots and the active card all follow it.
+- **The dots are `aria-hidden` decoration**, one per card, the cards in view marked and the first one wide. The counter says the same in words, so they are not buttons.
+- **Reduced motion:** `speed: 0` from `useReducedMotion()`, so a slide changes at once.
+- **A new search starts at the first card:** the carousel gets a `key` from the search on screen, never an effect that calls `slideTo(0)`.
 - **The states come first:** loading, error and empty render before the carousel; Swiper renders only with results.
 - **The active slide is state the page owns:** `onSlideChange` reports `activeIndex`, and the page calls `swiper.slideTo(index)` when a map marker is chosen. Keep the Swiper instance in a ref, not in state.
 - Import only the CSS Swiper needs (`swiper/css` and the modules used) inside the component that uses it.

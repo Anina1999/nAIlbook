@@ -15,7 +15,7 @@ type SearchFormProps = {
   onSearch: (values: SearchValues) => void;
 };
 
-/** City and service search. It searches only on submit, never while typing. */
+/** City and service search on the glass panel. It searches only on submit, never while typing. */
 export default function SearchForm({ initialValues, onSearch }: SearchFormProps) {
   const { values, changeHandler } = useForm<SearchValues>(initialValues);
 
@@ -27,12 +27,30 @@ export default function SearchForm({ initialValues, onSearch }: SearchFormProps)
   return (
     <form role="search" noValidate className={styles.form} onSubmit={submitHandler}>
       <div className={styles.field}>
-        <FormField label="Град" name="city" autoComplete="address-level2" value={values.city} onChange={changeHandler} />
+        <FormField
+          variant="glass"
+          label="Град"
+          name="city"
+          autoComplete="address-level2"
+          placeholder="напр. София"
+          value={values.city}
+          onChange={changeHandler}
+        />
       </div>
       <div className={styles.field}>
-        <FormField label="Услуга" name="service" autoComplete="off" value={values.service} onChange={changeHandler} />
+        <FormField
+          variant="glass"
+          label="Услуга"
+          name="service"
+          autoComplete="off"
+          placeholder="напр. Гел лак"
+          value={values.service}
+          onChange={changeHandler}
+        />
       </div>
-      <Button type="submit">Търсене</Button>
+      <Button type="submit" variant="search">
+        Търсене
+      </Button>
     </form>
   );
 }

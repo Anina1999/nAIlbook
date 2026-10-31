@@ -61,9 +61,10 @@
   @apply h-11 px-0.5 pb-1 text-center align-bottom font-normal;
 }
 
-/* The short underline under each header. */
+/* The short underline under each header. Below sm it has no side padding, so a
+   two-digit date («30.10» in Montserrat) stays inside a 45px column. */
 .headerLabel {
-  @apply inline-block border-b-2 border-accent px-1 pb-1;
+  @apply inline-block border-b-2 border-accent px-1 pb-1 max-sm:px-0;
 }
 
 /* ink on accent-soft: 12.9. */
@@ -73,7 +74,7 @@
 
 /* muted on accent-soft: 4.9. */
 .dayMonth {
-  @apply block text-sm text-muted tabular-nums;
+  @apply block text-sm text-muted tabular-nums max-sm:tracking-tight;
 }
 
 .rowHeader {

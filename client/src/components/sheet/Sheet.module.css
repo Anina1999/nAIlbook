@@ -1,0 +1,16 @@
+@reference "../../index.css";
+
+/* A light sheet on the night (ui-design, Components, Sheet): the tokens inside it are
+   the light ones (ink on surface: 15.0). p-3 on a phone keeps the week table's five
+   day columns at 44px or more inside the 24px page padding (with p-4 they are 43.8px
+   and the table scrolls). */
+.sheet {
+  @apply mt-8 rounded-2xl border border-candy bg-surface p-3 text-ink sm:mt-12 sm:p-8;
+  box-shadow:
+    0 8px 22px color-mix(in srgb, var(--color-glow-candy) 35%, transparent),
+    0 0 50px color-mix(in srgb, var(--color-glow-pink) 20%, transparent);
+}
+
+.narrow {
+  @apply max-w-xl;
+}

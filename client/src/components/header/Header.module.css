@@ -1,32 +1,49 @@
 @reference "../../index.css";
 
-/* The content follows the page column, so the logo and the menu line up with it. */
+/* A dark veil with a glowing pink edge (ui-design, Components, App header).
+   white on the veil: 13.2. */
 .header {
-  @apply border-b border-line;
+  @apply relative z-2 border-b border-header-line/55 bg-veil/55;
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--color-header-rim) 35%, transparent),
+    0 8px 22px color-mix(in srgb, var(--color-header-glow) 55%, transparent),
+    0 18px 40px color-mix(in srgb, var(--color-header-glow-deep) 30%, transparent);
 }
 
+/* The full window width: the logo on the far left, the menu on the far right.
+   The top padding leaves room for the bottle on the logo. */
 .inner {
-  @apply w-full px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2;
+  @apply flex w-full flex-wrap items-center justify-between gap-3 px-6 pt-5 pb-2.5;
 }
 
-.logo {
-  @apply inline-flex items-center min-h-11 text-lg font-bold text-ink rounded-lg;
-  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
-}
-
+/* Below sm the menu takes its own line under the logo. */
 .nav {
-  @apply flex min-w-0 items-center gap-2;
+  @apply flex min-w-0 items-center gap-2.5 max-sm:w-full;
+}
+
+/* On the night the focus outline is white: accent is below 3:1 there. */
+.link,
+.outline {
+  @apply inline-flex min-h-11 shrink-0 items-center rounded-control text-base text-white no-underline;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white;
 }
 
 .link {
-  @apply inline-flex items-center min-h-11 px-3 rounded-lg text-accent font-semibold hover:text-accent-strong hover:underline;
-  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+  @apply px-4.5 font-medium;
 }
 
+/* The glass outline button: «Регистрация», «Изход». white on it: 5.25 at the lightest
+   point of the backdrop. Disabled while logging out; its text says so («Излизане…»). */
+.outline {
+  @apply cursor-pointer border-white/60 bg-white/8 px-5 font-semibold disabled:cursor-not-allowed;
+  border-width: 1.5px;
+}
+
+/* moon on the header veil: 12.5 or more. */
 .userName {
-  @apply min-w-0 truncate font-semibold;
+  @apply min-w-0 truncate font-semibold text-moon;
 }
 
 .status {
-  @apply text-muted;
+  @apply text-moon;
 }

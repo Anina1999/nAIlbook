@@ -4,7 +4,9 @@ import { API_URL } from './ports';
 test('the home page opens', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { name: 'nAIlbook' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Намерете маникюрист във вашия град' })).toBeVisible();
+  // The logo link is in the header and in the footer, so look for it in the header.
+  await expect(page.getByRole('banner').getByRole('link', { name: 'nAIlbook — начало' })).toBeVisible();
 });
 
 test('the home page has no horizontal scroll at 375px', async ({ page }) => {

@@ -1,40 +1,120 @@
 @reference "../../index.css";
 
 .page {
-  @apply flex flex-col gap-8;
+  @apply flex flex-col gap-10;
+}
+
+.hero {
+  @apply flex flex-col gap-6 pt-12;
+}
+
+.intro {
+  @apply flex max-w-142 flex-col gap-3.5;
+}
+
+/* The one all-caps label (ui-design, Type). blush on the badge: 9.7 (7.2 on a phone). */
+.badge {
+  @apply self-start rounded-full border border-white/60 bg-white/10 px-3 py-1.5 font-semibold text-blush uppercase;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  box-shadow:
+    0 0 1.5px var(--color-white),
+    0 0 6px color-mix(in srgb, var(--color-star-halo) 90%, transparent),
+    0 0 14px color-mix(in srgb, var(--color-lilac-halo) 60%, transparent),
+    inset 0 0 8px color-mix(in srgb, var(--color-flourish-halo) 25%, transparent);
+}
+
+/* Silver text (ui-design, Type): plain silver (5.34 on the lightest point of the
+   backdrop) where the browser cannot clip a background to text; the gradient's
+   darkest stop still passes at 4.51. Shown in the still first frame of its sheen. */
+.silver {
+  color: var(--color-silver);
+  filter:
+    drop-shadow(0 1px 0 color-mix(in srgb, var(--color-white) 90%, transparent))
+    drop-shadow(0 2px 1px color-mix(in srgb, var(--color-shade) 95%, transparent))
+    drop-shadow(0 4px 4px color-mix(in srgb, var(--color-shade) 85%, transparent))
+    drop-shadow(0 8px 16px color-mix(in srgb, var(--color-shade-deep) 75%, transparent))
+    drop-shadow(0 0 12px color-mix(in srgb, var(--color-silver-glow) 30%, transparent));
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .silver {
+    background-image:
+      radial-gradient(circle at 15% 30%, var(--color-white) 0 1px, transparent 1.6px),
+      radial-gradient(circle at 60% 70%, var(--color-white) 0 0.9px, transparent 1.5px),
+      radial-gradient(circle at 85% 20%, var(--color-white) 0 1.1px, transparent 1.7px),
+      linear-gradient(
+        100deg,
+        var(--color-silver-1) 0%,
+        var(--color-white) 12%,
+        var(--color-silver-2) 22%,
+        var(--color-silver-3) 32%,
+        var(--color-white) 42%,
+        var(--color-silver-4) 50%,
+        var(--color-silver-5) 60%,
+        var(--color-white) 72%,
+        var(--color-silver-2) 82%,
+        var(--color-silver-6) 92%,
+        var(--color-white) 100%
+      );
+    background-size: 7px 7px, 11px 11px, 9px 9px, 220% 100%;
+    background-position: 0 0, 0 0, 0 0, 0% 50%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+/* High contrast mode: the system's text colour, no gradient and no shadow. */
+@media (forced-colors: active) {
+  .silver {
+    background-image: none;
+    color: CanvasText;
+    -webkit-text-fill-color: CanvasText;
+    filter: none;
+  }
 }
 
 .title {
-  @apply text-3xl font-bold;
+  @apply m-0 font-display font-bold;
+  font-size: clamp(34px, 4.4vw, 52px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
 }
 
-.lead {
-  @apply mt-2 text-muted;
+/* moon at the lightest point of the backdrop: 5.89 without the shadow. */
+.copy {
+  @apply leading-normal font-medium text-moon text-shadow-copy;
+  font-size: 17px;
 }
 
-.search {
-  @apply flex flex-col gap-4;
-}
-
-/* One line high even when empty. */
-.status {
-  @apply min-h-6 text-muted;
-}
-
-/* py-1 leaves room for the card's 4px lift and its shadow on hover and focus. */
 .results {
-  @apply grid gap-4 py-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4;
+  @apply flex flex-col;
 }
 
-.result {
-  @apply min-w-0;
+.sectionTitle {
+  @apply m-0 font-display font-bold;
+  font-size: 26px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+/* The heading and the status line, as the carousel's head has them. */
+.resultsHead {
+  @apply flex flex-col gap-1.5;
+}
+
+/* One line high even when empty, 6px under the title like the carousel's counter. */
+.status {
+  @apply min-h-5 text-base leading-tight font-medium text-moon text-shadow-copy;
 }
 
 .empty {
-  @apply flex flex-col items-center gap-2 py-8 text-center wrap-break-word;
+  @apply flex flex-col items-center gap-2 py-8 text-center font-medium wrap-break-word text-moon text-shadow-copy;
 }
 
+/* Links on the night are blush (9.7 or more), never petal. */
 .clearLink {
-  @apply inline-flex items-center min-h-11 rounded-lg text-accent hover:text-accent-strong hover:underline;
-  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+  @apply inline-flex min-h-11 items-center rounded-lg text-blush underline-offset-4 hover:text-white hover:underline;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white;
 }

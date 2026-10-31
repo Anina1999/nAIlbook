@@ -1,53 +1,253 @@
 @reference "../../index.css";
 
-/* The whole card is the link (see .link::after); hover and keyboard focus look the same. */
+/* The iridescent card (ui-design, Components, Manicurist card), shown in the still
+   first frame of its sheen. card-ink on the darkest stop (iri-3): 8.75. The 3px
+   transparent border is where the active card's light runs. */
 .card {
-  @apply relative h-full bg-raised border border-line rounded-xl p-4 transition duration-200;
-  @apply hover:border-accent hover:bg-accent-soft hover:shadow-md motion-safe:hover:-translate-y-1;
-  @apply focus-within:border-accent focus-within:bg-accent-soft focus-within:shadow-md motion-safe:focus-within:-translate-y-1;
+  @apply relative flex h-full flex-col gap-3 rounded-card p-4.5 text-card-ink;
+  border: 3px solid transparent;
+  background-image: linear-gradient(
+    120deg,
+    var(--color-iri-1) 0%,
+    var(--color-iri-2) 18%,
+    var(--color-iri-3) 34%,
+    var(--color-iri-4) 52%,
+    var(--color-iri-5) 66%,
+    var(--color-iri-6) 82%,
+    var(--color-iri-1) 100%
+  );
+  background-size: 300% 300%;
+  background-position: 0% 50%;
+  background-clip: padding-box;
+  background-origin: padding-box;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-white) 90%, transparent),
+    inset 0 0 28px color-mix(in srgb, var(--color-white) 35%, transparent),
+    0 0 16px color-mix(in srgb, var(--color-glow-candy) 35%, transparent),
+    0 0 50px color-mix(in srgb, var(--color-glow-pink) 18%, transparent);
 }
 
+/* Hover and keyboard focus look the same: a brighter glow, and a 4px lift when motion is allowed. */
+.card:hover,
+.card:focus-within {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-white) 90%, transparent),
+    inset 0 0 28px color-mix(in srgb, var(--color-white) 35%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--color-candy) 70%, transparent),
+    0 0 22px color-mix(in srgb, var(--color-glow-candy) 55%, transparent),
+    0 0 60px color-mix(in srgb, var(--color-glow-pink) 30%, transparent);
+}
+
+/* The active card stays lifted by 4px, and a light runs round its border. */
+@property --spin {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.active {
+  transform: translateY(-4px);
+  background-image:
+    linear-gradient(
+      120deg,
+      var(--color-iri-1) 0%,
+      var(--color-iri-2) 18%,
+      var(--color-iri-3) 34%,
+      var(--color-iri-4) 52%,
+      var(--color-iri-5) 66%,
+      var(--color-iri-6) 82%,
+      var(--color-iri-1) 100%
+    ),
+    conic-gradient(
+      from var(--spin),
+      transparent 0deg,
+      transparent 200deg,
+      color-mix(in srgb, var(--color-candy) 55%, transparent) 260deg,
+      var(--color-candy) 305deg,
+      var(--color-white) 335deg,
+      var(--color-candy) 348deg,
+      transparent 360deg
+    );
+  background-size: 300% 300%, 100% 100%;
+  background-position: 0% 50%, 0 0;
+  background-clip: padding-box, border-box;
+  background-origin: padding-box, border-box;
+}
+
+@keyframes borderSpin {
+  to {
+    --spin: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card {
+    transition: transform 0.25s ease;
+  }
+
+  .card:hover,
+  .card:focus-within {
+    transform: translateY(-4px);
+  }
+
+  .active {
+    animation: borderSpin 2.4s linear infinite;
+  }
+}
+
+.head {
+  @apply flex items-center gap-3.5;
+}
+
+/* plum on pearl: 11.4. */
+.avatar {
+  @apply flex size-10 shrink-0 items-center justify-center rounded-full border border-candy font-bold text-plum;
+  font-size: 15px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-white) 95%, transparent) 0%,
+    color-mix(in srgb, var(--color-pearl) 85%, transparent) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 var(--color-white),
+    inset 0 -2px 6px color-mix(in srgb, var(--color-candy) 18%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--color-candy) 20%, transparent),
+    0 4px 14px color-mix(in srgb, var(--color-glow-candy) 35%, transparent);
+}
+
+.identity {
+  @apply flex min-w-0 flex-col gap-1;
+}
+
+/* card-title on the darkest stop: 8.62. */
 .name {
-  @apply text-lg font-semibold;
+  @apply font-display font-bold wrap-break-word text-card-title;
+  font-size: 20px;
+  line-height: 1.2;
+  -webkit-text-stroke: 0.5px currentColor;
+  paint-order: stroke fill;
+  text-shadow:
+    0 1px 0 color-mix(in srgb, var(--color-white) 60%, transparent),
+    0 2px 8px color-mix(in srgb, var(--color-glow-candy) 45%, transparent);
 }
 
 .link {
-  @apply inline-flex items-center min-h-11 min-w-0 rounded-lg wrap-break-word text-accent transition-colors duration-200;
+  @apply rounded-lg text-card-title no-underline;
   @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
-}
-
-/* The name darkens with the card instead of an underline (ui-design, Search result). */
-.card:hover .link,
-.card:focus-within .link {
-  @apply text-accent-strong;
 }
 
 /* Stretches the link over the card, so a click anywhere on it opens the page. */
 .link::after {
   content: '';
-  @apply absolute inset-0 rounded-xl;
+  @apply absolute inset-0 rounded-card;
 }
 
+/* card-muted on the darkest stop: 4.91. */
 .city {
-  @apply wrap-break-word text-muted;
+  @apply flex items-center gap-1.5 text-base wrap-break-word text-card-muted;
 }
 
+.pin {
+  @apply shrink-0;
+}
+
+/* The star between two lines that fade out; decoration only. */
+.divider {
+  @apply flex items-center gap-2;
+}
+
+.lineIn,
+.lineOut {
+  @apply flex-1 rounded-full;
+  height: 1.5px;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--color-candy) 50%, transparent);
+}
+
+.lineIn {
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-candy) 90%, transparent));
+}
+
+.lineOut {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--color-candy) 90%, transparent), transparent);
+}
+
+.dividerStar {
+  @apply shrink-0;
+  fill: var(--color-white);
+  stroke: var(--color-candy);
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--color-candy) 80%, transparent));
+}
+
+/* flex-1 keeps «Запази час» at the bottom when the carousel makes the cards equally tall. */
 .services {
-  @apply mt-3 flex flex-col gap-2 border-t border-line pt-3;
+  @apply flex flex-1 flex-col gap-2;
 }
 
+.serviceList {
+  @apply flex flex-col gap-2;
+}
+
+/* «и още 4 услуги»: card-muted on the darkest stop, 4.91. */
+.more {
+  @apply text-sm text-card-muted;
+}
+
+/* As in the design: the name on the left, the price and the duration on the right of
+   the same line. A long name wraps between its words, and a word too long for the
+   column is hyphenated (the page is lang="bg") rather than cut. */
 .service {
-  @apply flex flex-wrap items-baseline justify-between gap-x-4;
+  @apply grid items-baseline gap-x-3 text-sm;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .serviceName {
-  @apply min-w-0 wrap-break-word;
+  @apply min-w-0 hyphens-auto wrap-break-word;
 }
 
 .meta {
-  @apply flex gap-3 whitespace-nowrap;
+  @apply flex items-baseline gap-2;
+}
+
+.price {
+  @apply font-medium whitespace-nowrap;
 }
 
 .duration {
-  @apply text-sm text-muted tabular-nums;
+  @apply text-right text-sm whitespace-nowrap text-card-muted tabular-nums;
+}
+
+/* «Запази час»: a second link above the stretched one. book-ink on pearl: 17.7;
+   hover and focus fill it with plum (white on it: 9.8 to 11.4). */
+.book {
+  @apply relative z-10 mt-1 inline-flex min-h-11 items-center justify-center rounded-control border border-candy text-base font-bold text-book-ink no-underline;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-white) 95%, transparent) 0%,
+    color-mix(in srgb, var(--color-pearl) 85%, transparent) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 var(--color-white),
+    inset 0 -2px 6px color-mix(in srgb, var(--color-candy) 18%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--color-candy) 20%, transparent),
+    0 4px 14px color-mix(in srgb, var(--color-glow-candy) 35%, transparent);
+}
+
+.book:hover,
+.book:focus-visible {
+  @apply border-candy text-white;
+  background: linear-gradient(180deg, var(--color-plum-bright) 0%, var(--color-plum) 100%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-book-rim) 35%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--color-candy) 25%, transparent),
+    0 6px 18px color-mix(in srgb, var(--color-plum) 45%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .book {
+    transition:
+      background 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
 }

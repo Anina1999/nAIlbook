@@ -1,0 +1,135 @@
+@reference "../../index.css";
+
+/* A logotype: the «AI» on its tag is exempt from the text contrast rule (WCAG 1.4.3). */
+.logo {
+  @apply inline-flex min-h-11 items-center rounded-lg font-display text-white no-underline;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white;
+}
+
+.header {
+  font-size: 24px;
+}
+
+.footer {
+  font-size: 18px;
+}
+
+.letters {
+  @apply font-bold leading-none;
+  letter-spacing: -0.03em;
+}
+
+/* The «AI» tag, shaped like a nail. */
+.tag {
+  @apply relative inline-flex items-center justify-center font-bold leading-none text-white;
+  font-size: 0.74em;
+  letter-spacing: 0.02em;
+  padding: 0.42em 0.32em 0.28em;
+  margin: 0 0.09em;
+  border-radius: 0.68em 0.68em 0.27em 0.27em;
+  background: linear-gradient(
+    118deg,
+    var(--color-tag-1) 0%,
+    var(--color-tag-2) 22%,
+    var(--color-tag-3) 42%,
+    var(--color-tag-4) 50%,
+    var(--color-tag-5) 60%,
+    var(--color-tag-6) 82%,
+    var(--color-tag-7) 100%
+  );
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--color-tag-shade) 65%, transparent);
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--color-white) 35%, transparent),
+    0 6px 18px color-mix(in srgb, var(--color-tag-glow) 50%, transparent),
+    inset 0 -3px 6px color-mix(in srgb, var(--color-tag-shade) 35%, transparent);
+}
+
+.glitter {
+  @apply pointer-events-none absolute inset-0;
+  border-radius: inherit;
+  background-image:
+    radial-gradient(circle at 20% 30%, color-mix(in srgb, var(--color-white) 90%, transparent) 0 0.6px, transparent 1.2px),
+    radial-gradient(circle at 70% 65%, color-mix(in srgb, var(--color-sparkle) 80%, transparent) 0 0.5px, transparent 1px),
+    radial-gradient(circle at 45% 85%, color-mix(in srgb, var(--color-white) 70%, transparent) 0 0.5px, transparent 1px);
+  background-size: 5px 5px, 7px 7px, 6px 6px;
+  opacity: 0.55;
+}
+
+.tagText {
+  @apply relative;
+}
+
+/* The polish bottle leaning on the tag's top right corner. */
+.bottle {
+  @apply absolute overflow-visible;
+  width: 1.55em;
+  height: 1.55em;
+  top: -1.06em;
+  right: -0.74em;
+  filter: drop-shadow(0 2px 3px color-mix(in srgb, var(--color-logo-drop) 50%, transparent));
+}
+
+.cap1 {
+  stop-color: var(--color-cap-1);
+}
+
+.cap2 {
+  stop-color: var(--color-cap-2);
+}
+
+.cap3 {
+  stop-color: var(--color-cap-3);
+}
+
+.cap4 {
+  stop-color: var(--color-cap-4);
+}
+
+.polish1 {
+  stop-color: var(--color-polish-1);
+}
+
+.polish2 {
+  stop-color: var(--color-polish-2);
+}
+
+.polish3 {
+  stop-color: var(--color-polish-3);
+}
+
+.polish4 {
+  stop-color: var(--color-polish-4);
+}
+
+.capRidges {
+  stroke: color-mix(in srgb, var(--color-white) 16%, transparent);
+}
+
+.capShine {
+  fill: color-mix(in srgb, var(--color-white) 55%, transparent);
+}
+
+.collar {
+  fill: var(--color-petal);
+}
+
+.neck {
+  fill: color-mix(in srgb, var(--color-neck) 85%, transparent);
+}
+
+.bottleEdge {
+  stroke: var(--color-white);
+}
+
+.streaks {
+  stroke: color-mix(in srgb, var(--color-polish-streak) 45%, transparent);
+}
+
+.shine {
+  stroke: color-mix(in srgb, var(--color-white) 75%, transparent);
+}
+
+.drop {
+  fill: var(--color-tag-3);
+  stroke: var(--color-white);
+}

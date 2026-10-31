@@ -34,7 +34,7 @@ If the code has to differ from a skill, stop and ask. When the change is agreed,
 | Auth | JWT and bcrypt |
 | Validation | zod |
 | Tests | Vitest, Supertest, Playwright (E2E, Chromium only) |
-| Approved extras | `cors` (server), `tsx` (server dev runner), `concurrently` (root, runs client and server together), `@prisma/adapter-better-sqlite3` + `better-sqlite3` (server, the SQLite driver Prisma 7 requires), the Sofia Sans font from Google Fonts (client, a `<link>` in `index.html`, see `ui-design`), `@playwright/test` (client, the E2E tests in `client/e2e/`) |
+| Approved extras | `cors` (server), `tsx` (server dev runner), `concurrently` (root, runs client and server together), `@prisma/adapter-better-sqlite3` + `better-sqlite3` (server, the SQLite driver Prisma 7 requires), the Montserrat and Cormorant Garamond fonts from Google Fonts (client, a `<link>` in `index.html`, see `ui-design`), `swiper` (client, the results carousel on `/`, see `best-code-practices`), `@playwright/test` (client, the E2E tests in `client/e2e/`) |
 
 Ask before adding a dependency that is not on this list. Type packages (`@types/*`) and build plugins for the listed tools (`@vitejs/plugin-react`, `@tailwindcss/vite`) count as part of the stack.
 

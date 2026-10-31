@@ -1,9 +1,12 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: "Sofia Sans", system-ui, sans-serif;
+/* Static: every token is emitted, so the CSS Modules can read it with var() too. */
+@theme static {
+  --font-sans: "Montserrat", system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", Georgia, serif; /* h1–h3 and the logo */
 
-  --color-surface: #FBF8F9;       /* page background */
+  /* --- Light sheets --- */
+  --color-surface: #FBF8F9;       /* sheet background */
   --color-raised: #FFFFFF;        /* cards, inputs, dialogs */
   --color-ink: #2B1E2C;           /* main text */
   --color-muted: #6E5F6C;         /* secondary text */
@@ -15,10 +18,127 @@
   --color-danger: #B42318;        /* errors, destructive actions */
   --color-danger-soft: #FDECEA;   /* background of error boxes */
   --color-success: #1F7A4D;       /* confirmations */
+  --color-white: #FFFFFF;         /* text on the night, sparks, strokes */
+
+  /* --- Night backdrop --- */
+  --color-night: #1E0B2E;         /* body background */
+  --color-night-cherry: #4A0D35;  /* the backdrop gradient: top */
+  --color-night-plum: #3A0F4A;    /* the backdrop gradient: middle */
+  --color-night-indigo: #23104F;  /* the backdrop gradient: bottom */
+  --color-veil: #100418;          /* header bar, start of the glass panel */
+  --color-veil-deep: #0C0314;     /* footer bar */
+  --color-shade: #0E0216;         /* shadows under text on the night */
+  --color-shade-deep: #0A0112;    /* the widest silver shadow */
+  --color-abyss: #0A0214;         /* the drop shadow under the glass panel */
+  --color-panel-mid: #220A24;     /* the glass panel: middle */
+  --color-panel-end: #340E28;     /* the glass panel: end */
+
+  /* --- Glows --- */
+  --color-glow-rose: #FF78BE;     /* backdrop, top right */
+  --color-glow-indigo: #583CC8;   /* backdrop, left */
+  --color-glow-pink: #FF96C8;     /* backdrop centre, panel and card glow */
+  --color-glow-orchid: #F06EB4;   /* backdrop, bottom left */
+  --color-glow-candy: #FF82C3;    /* panel and card halo */
+  --color-aurora-pink: #FF96CD;   /* the aurora's first spot */
+  --color-blossom: #FFAAD7;       /* the aurora's second spot, the panel's top light */
+  --color-milky-gold: #FFDE96;    /* the milky way's glow */
+  --color-milky-rose: #FFBED7;    /* the milky way's outer glow */
+  --color-header-line: #FF8C9B;   /* the header's bottom border */
+  --color-header-rim: #FFAAB4;    /* the light line under the header */
+  --color-header-glow: #E24A60;   /* the header's near glow */
+  --color-header-glow-deep: #C8344F; /* the header's far glow */
+  --color-panel-border: #FFA0D2;  /* the glass panel's border */
+  --color-panel-edge: #FFD2EB;    /* the glass panel's inner top edge */
+  --color-panel-rim: #FFBEE1;     /* the light line under the glass panel */
+  --color-star-halo: #FFE1F5;     /* halo of stars and of the badge */
+  --color-lilac-halo: #DCBEFF;    /* outer halo of stars, flourishes and the badge */
+  --color-flourish-halo: #FFEBF8; /* halo of the flourishes, inner light of the badge */
+  --color-ornament-halo: #FFE6F5; /* halo of the footer ornament */
+  --color-silver-glow: #F0E6FF;   /* the soft light around silver text */
+
+  /* --- Text on the night --- */
+  --color-moon: #FFF4FA;          /* copy text, footer text, the user's name */
+  --color-blush: #FCE4F0;         /* the badge, links on the night */
+  --color-silver: #E9ECF2;        /* silver headings: the fallback colour */
+  --color-silver-1: #E4E7EE;      /* the six silver gradient stops (with white) */
+  --color-silver-2: #EEF0F5;
+  --color-silver-3: #D6DAE3;      /* the darkest stop */
+  --color-silver-4: #F7F8FB;
+  --color-silver-5: #DADDE6;
+  --color-silver-6: #D9DCE5;
+
+  /* --- Glitter sparks --- */
+  --color-spark-gold: #FFE7A8;
+  --color-spark-pink: #FFC3E4;
+  --color-spark-lilac: #D8C8FF;
+  --color-spark-rose: #FFD6EC;
+  --color-spark-cream: #FFF1C9;
+  --color-spark-lavender: #E9DDFF;
+  --color-dust-cream: #FFF4D6;    /* the milky way's dust */
+  --color-dust-gold: #FFE9B8;
+
+  /* --- Iridescent card --- */
+  --color-iri-1: #EDBFD7;
+  --color-iri-2: #DECBF2;
+  --color-iri-3: #C6B9EE;         /* the darkest stop */
+  --color-iri-4: #F0D2C3;
+  --color-iri-5: #F2E7CB;
+  --color-iri-6: #CFC1EE;
+  --color-card-ink: #24145A;      /* card text */
+  --color-card-title: #3A0C4E;    /* the card's name */
+  --color-card-muted: #4E4179;    /* city and durations */
+  --color-plum: #5C1A72;          /* initials, the «Запази час» hover */
+  --color-plum-bright: #6A2083;   /* top of the «Запази час» hover */
+  --color-candy: #FF8CC6;         /* card borders, divider, the running light, sheet border */
+  --color-pearl: #FFF6FB;         /* the avatar's and «Запази час»'s fill */
+  --color-book-ink: #1C0A28;      /* «Запази час» text */
+  --color-book-rim: #FFC8E6;      /* the inner light of «Запази час» on hover */
+  --color-arrow-hover: #E2609F;   /* the carousel arrows on hover and focus, with a white icon */
+  --color-dot: #F7C6DC;           /* the dots of the cards in view */
+
+  /* --- Search on the night --- */
+  --color-field-soft: #B9AAB2;    /* input borders on the glass panel, decorative */
+  --color-input-ink: #231A20;     /* input text on the glass panel */
+
+  /* --- Logo --- */
+  --color-tag-1: #6E0A45;         /* the «AI» tag gradient, left to right */
+  --color-tag-2: #A80F68;
+  --color-tag-3: #E0309A;         /* also the polish drop */
+  --color-tag-4: #FF86CF;
+  --color-tag-5: #D81B8C;
+  --color-tag-6: #9C0C60;
+  --color-tag-7: #64083E;
+  --color-tag-shade: #460028;     /* the tag's text and inner shadow */
+  --color-tag-glow: #D63384;      /* the tag's glow */
+  --color-sparkle: #FFDCF0;       /* the tag's glitter */
+  --color-logo-drop: #14041E;     /* the bottle's shadow */
+  --color-cap-1: #1E0618;         /* the bottle cap gradient */
+  --color-cap-2: #4E123D;
+  --color-cap-3: #2E0A25;
+  --color-cap-4: #14030F;
+  --color-polish-1: #8A0D55;      /* the polish gradient */
+  --color-polish-2: #F04AAE;
+  --color-polish-3: #FF9AD6;
+  --color-polish-4: #B3106E;
+  --color-polish-streak: #5A0032; /* the lines in the polish */
+  --color-petal: #F2A7C8;         /* the bottle's collar */
+  --color-neck: #F0DCE8;          /* the bottle's neck */
+
+  /* --- Radii of the night components --- */
+  --radius-control: 10px;         /* buttons and inputs on the night, «Запази час» */
+  --radius-card: 16px;            /* the iridescent card */
+  --radius-panel: 18px;           /* the glass search panel */
+
+  /* --- The shadow under copy text on the night --- */
+  --text-shadow-copy:
+    0 1px 1px color-mix(in srgb, var(--color-shade) 95%, transparent),
+    0 2px 4px color-mix(in srgb, var(--color-shade) 90%, transparent),
+    0 0 14px color-mix(in srgb, var(--color-shade) 80%, transparent),
+    0 0 28px color-mix(in srgb, var(--color-shade) 55%, transparent);
 }
 
 @layer base {
   body {
-    @apply bg-surface text-ink;
+    @apply bg-night text-white;
   }
 }

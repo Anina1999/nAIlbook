@@ -1,6 +1,18 @@
 @reference "../../index.css";
 
-/* The full window width with side padding (ui-design, Layout and spacing). */
+/* The backdrop fills this box, so it is as tall as the page. overflow-x: clip keeps a
+   carousel arrow that grows on hover or focus at a phone's edge from adding a sideways scroll. */
+.app {
+  @apply relative flex min-h-screen flex-col overflow-x-clip text-white;
+}
+
+/* Above the backdrop. */
+.content {
+  @apply relative z-1 flex flex-1 flex-col;
+}
+
+/* The 1120px centred column (ui-design, Layout and spacing); pb-14 keeps the last
+   section off the ornament row above the footer. */
 .column {
-  @apply w-full px-4 sm:px-6 lg:px-8 py-8;
+  @apply mx-auto flex w-full max-w-280 flex-1 flex-col px-6 pb-14;
 }

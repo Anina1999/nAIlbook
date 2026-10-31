@@ -1,10 +1,29 @@
 @reference "../../index.css";
 
-/* Capped and left-aligned on wide screens; the results below stay full width. */
+/* The glass search panel (ui-design, Components): the full column wide, a dark glass
+   with pink light from two corners and a pink glow around it. */
 .form {
-  @apply flex w-full max-w-3xl flex-col gap-4 sm:flex-row sm:items-end;
+  @apply flex w-full flex-wrap items-end gap-4 rounded-panel border border-panel-border/60 p-4.5 text-white;
+  background:
+    radial-gradient(70% 160% at 88% 120%, color-mix(in srgb, var(--color-glow-pink) 28%, transparent), transparent 60%),
+    radial-gradient(55% 140% at 12% -30%, color-mix(in srgb, var(--color-blossom) 14%, transparent), transparent 62%),
+    linear-gradient(
+      100deg,
+      color-mix(in srgb, var(--color-veil) 70%, transparent) 0%,
+      color-mix(in srgb, var(--color-panel-mid) 62%, transparent) 55%,
+      color-mix(in srgb, var(--color-panel-end) 55%, transparent) 100%
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-panel-edge) 35%, transparent),
+    inset 0 0 30px color-mix(in srgb, var(--color-glow-pink) 12%, transparent),
+    0 1px 0 color-mix(in srgb, var(--color-panel-rim) 30%, transparent),
+    0 8px 22px color-mix(in srgb, var(--color-glow-candy) 45%, transparent),
+    0 0 50px color-mix(in srgb, var(--color-glow-pink) 25%, transparent),
+    0 22px 50px color-mix(in srgb, var(--color-abyss) 50%, transparent);
 }
 
+/* Two fields side by side while each has 260px, else one per line. */
 .field {
-  @apply min-w-0 sm:flex-1;
+  @apply min-w-0;
+  flex: 1 1 260px;
 }

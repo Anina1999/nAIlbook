@@ -8,8 +8,9 @@
   @apply flex flex-col gap-2;
 }
 
+/* Titles in the display font on the sheet (ui-design, Type). */
 .title {
-  @apply text-2xl font-bold wrap-break-word;
+  @apply font-display text-3xl font-bold wrap-break-word text-ink;
 }
 
 .place {
@@ -41,12 +42,19 @@
   @apply max-w-prose wrap-break-word;
 }
 
+/* scroll-mt keeps the section off the window edge after the scroll to #schedule. */
 .step {
-  @apply flex flex-col gap-4;
+  @apply flex scroll-mt-6 flex-col gap-4;
 }
 
 .stepTitle {
-  @apply text-lg font-semibold;
+  @apply font-display text-2xl font-bold text-ink;
+}
+
+/* «Свободни часове»: focused after the scroll to #schedule. */
+.scrollTarget {
+  @apply rounded-lg;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent;
 }
 
 .fieldset {

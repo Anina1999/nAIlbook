@@ -1,7 +1,8 @@
+import { useId } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { searchManicurists, type ManicuristSummary } from '../../api/manicurists';
 import ErrorMessage from '../../components/error-message/ErrorMessage';
-import ManicuristCard from '../../components/manicurist-card/ManicuristCard';
+import ManicuristCarousel from '../../components/manicurist-carousel/ManicuristCarousel';
 import SearchForm, { type SearchValues } from '../../components/search-form/SearchForm';
 import { useAsync } from '../../hooks/useAsync';
 import styles from './Home.module.css';
@@ -20,6 +21,7 @@ function emptyMessage({ city, service }: SearchResult): string {
 }
 
 export default function Home() {
+  const resultsTitleId = useId();
   // The search lives in the URL, so reload, Back and a shared link show the same results.
   const [searchParams, setSearchParams] = useSearchParams();
   const city = (searchParams.get('city') ?? '').trim();
@@ -44,42 +46,62 @@ export default function Home() {
     if (next.toString() !== searchParams.toString()) setSearchParams(next);
   };
 
+  const heading = (
+    <h2 id={resultsTitleId} className={`${styles.silver} ${styles.sectionTitle}`}>
+      Маникюристи
+    </h2>
+  );
+
   return (
     <div className={styles.page}>
-      <div>
-        <h1 className={styles.title}>nAIlbook</h1>
-        <p className={styles.lead}>Намерете маникюрист във вашия град и запазете час онлайн.</p>
-      </div>
+      {/* No accessible name: named after the h1 («…във вашия град»), the region would also
+          answer to the label «Град» of the city field. */}
+      <section className={styles.hero}>
+        <div className={styles.intro}>
+          <p className={styles.badge}>Онлайн записване за маникюр</p>
+          <h1 className={`${styles.silver} ${styles.title}`}>
+            Намерете маникюрист във вашия град
+          </h1>
+          <p className={styles.copy}>
+            Разгледайте студиата и услугите им, сравнете цени и запазете час онлайн.
+          </p>
+        </div>
 
-      <section className={styles.search}>
         {error && <ErrorMessage message={error} />}
         {/* The key refills the inputs when the URL changes (Back, «Изчистете търсенето»). */}
         <SearchForm key={`${city}\n${service}`} initialValues={{ city, service }} onSearch={searchHandler} />
+      </section>
 
-        {/* Always rendered with a fixed height, so «Зареждане…» does not move the results. */}
-        <p role="status" className={styles.status}>
-          {loading ? 'Зареждане…' : ''}
-        </p>
-
-        {result &&
-          (result.manicurists.length > 0 ? (
-            <ul className={styles.results} aria-busy={loading}>
-              {result.manicurists.map((manicurist) => (
-                <li key={manicurist.id} className={styles.result}>
-                  <ManicuristCard manicurist={manicurist} />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className={styles.empty}>
-              <p>{emptyMessage(result)}</p>
-              {(result.city || result.service) && (
-                <Link to="/" className={styles.clearLink}>
-                  Изчистете търсенето
-                </Link>
-              )}
+      <section aria-labelledby={resultsTitleId} className={styles.results}>
+        {result && result.manicurists.length > 0 ? (
+          // The key from the search on screen: a new result starts again at the first card.
+          <ManicuristCarousel
+            key={`${result.city}\n${result.service}`}
+            heading={heading}
+            manicurists={result.manicurists}
+            loading={loading}
+          />
+        ) : (
+          <>
+            <div className={styles.resultsHead}>
+              {heading}
+              {/* Always rendered with a fixed height, so «Зареждане…» does not move the content. */}
+              <p role="status" className={styles.status}>
+                {loading ? 'Зареждане…' : ''}
+              </p>
             </div>
-          ))}
+            {result && (
+              <div className={styles.empty} aria-busy={loading}>
+                <p>{emptyMessage(result)}</p>
+                {(result.city || result.service) && (
+                  <Link to="/" className={styles.clearLink}>
+                    Изчистете търсенето
+                  </Link>
+                )}
+              </div>
+            )}
+          </>
+        )}
       </section>
     </div>
   );

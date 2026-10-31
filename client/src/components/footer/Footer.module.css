@@ -1,0 +1,67 @@
+@reference "../../index.css";
+
+/* The row of stars and a flourish above the footer; decoration only. */
+.ornament {
+  @apply flex items-center justify-center gap-2.5 px-6 pb-5;
+}
+
+.fill {
+  fill: var(--color-white);
+}
+
+.stroke {
+  stroke: var(--color-white);
+}
+
+.stars {
+  @apply overflow-visible;
+  filter:
+    drop-shadow(0 0 1.5px var(--color-white))
+    drop-shadow(0 0 5px color-mix(in srgb, var(--color-star-halo) 90%, transparent))
+    drop-shadow(0 0 12px color-mix(in srgb, var(--color-lilac-halo) 60%, transparent));
+}
+
+.flourish {
+  @apply h-auto overflow-visible;
+  max-width: 40vw;
+  opacity: 0.75;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--color-ornament-halo) 70%, transparent));
+}
+
+@keyframes star {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stars {
+    animation: star 3.2s ease-in-out infinite;
+  }
+
+  /* The second row twinkles out of step with the first. */
+  .late {
+    animation-delay: -1.6s;
+  }
+}
+
+/* moon on the footer veil: 12.5. */
+.footer {
+  @apply border-t border-white/10 bg-veil-deep/55 text-moon;
+}
+
+/* The full window width, like the header row: the logo far left, the copyright far right. */
+.inner {
+  @apply flex w-full flex-wrap items-center justify-between gap-3 px-6 pt-6 pb-5 text-sm;
+}
+
+.line {
+  @apply font-medium text-shadow-copy;
+  font-size: 15px;
+}

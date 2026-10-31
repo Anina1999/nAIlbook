@@ -1,11 +1,13 @@
 @reference "../../index.css";
 
+/* The sheet around it is max-w-xl (Sheet narrow). */
 .page {
-  @apply flex max-w-xl flex-col gap-6;
+  @apply flex flex-col gap-6;
 }
 
+/* The title in the display font on the sheet (ui-design, Type). */
 .title {
-  @apply text-2xl font-bold;
+  @apply font-display text-3xl font-bold text-ink;
 }
 
 .form {

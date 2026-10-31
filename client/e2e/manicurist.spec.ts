@@ -246,7 +246,7 @@ async function backToBackStart(page: Page): Promise<{ prefix: string; time: stri
 
 test('a guest picks a time, logs in, comes back to the same service and week and books', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('link', { name: MARIA }).click();
+  await page.getByRole('link', { name: MARIA, exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: MARIA })).toBeVisible();
 
   await pickService(page);

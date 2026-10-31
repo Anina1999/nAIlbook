@@ -1,0 +1,194 @@
+@reference "../../index.css";
+
+/* The night sky (ui-design, Direction). Behind the content, the full page high;
+   everything that reaches past it (the aurora, the milky way, the corner rays) is cut. */
+.backdrop {
+  @apply pointer-events-none absolute inset-0 overflow-hidden;
+  background:
+    radial-gradient(900px 560px at 88% -4%, color-mix(in srgb, var(--color-glow-rose) 50%, transparent), transparent 60%),
+    radial-gradient(800px 600px at -10% 45%, color-mix(in srgb, var(--color-glow-indigo) 40%, transparent), transparent 60%),
+    radial-gradient(760px 520px at 60% 60%, color-mix(in srgb, var(--color-glow-pink) 22%, transparent), transparent 65%),
+    radial-gradient(600px 420px at 8% 96%, color-mix(in srgb, var(--color-glow-orchid) 32%, transparent), transparent 62%),
+    linear-gradient(160deg, var(--color-night-cherry) 0%, var(--color-night-plum) 45%, var(--color-night-indigo) 100%);
+}
+
+/* --- Glitter: two tiled layers that twinkle out of step --- */
+
+.glitterA,
+.glitterB {
+  @apply absolute inset-0;
+}
+
+.glitterA {
+  background-image:
+    radial-gradient(circle at 12% 18%, var(--color-white) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 63% 41%, var(--color-spark-gold) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 37% 77%, var(--color-spark-pink) 0 1.2px, transparent 1.9px),
+    radial-gradient(circle at 88% 66%, var(--color-white) 0 0.8px, transparent 1.4px),
+    radial-gradient(circle at 25% 52%, var(--color-spark-lilac) 0 1px, transparent 1.7px);
+  background-size: 137px 137px;
+}
+
+.glitterB {
+  background-image:
+    radial-gradient(circle at 72% 14%, var(--color-white) 0 1.3px, transparent 2px),
+    radial-gradient(circle at 18% 63%, var(--color-spark-rose) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 48% 88%, var(--color-spark-cream) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 91% 35%, var(--color-spark-lavender) 0 0.9px, transparent 1.5px);
+  background-size: 211px 211px;
+}
+
+/* --- The aurora: shown in its first frame and never moved, because moving it
+   puts its bright spot under text (ui-design, Motion) --- */
+
+.aurora {
+  @apply absolute;
+  inset: -10%;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(40% 32% at 78% 30%, color-mix(in srgb, var(--color-aurora-pink) 40%, transparent), transparent 70%),
+    radial-gradient(36% 28% at 25% 75%, color-mix(in srgb, var(--color-blossom) 30%, transparent), transparent 70%);
+  background-size: 140% 140%;
+  background-position: 0% 0%;
+}
+
+/* --- The milky way: a tilted band of glow and still dust --- */
+
+/* The masks use only the alpha of their colours. */
+.milky {
+  @apply absolute;
+  left: -30%;
+  width: 160%;
+  top: 46%;
+  height: 300px;
+  transform: rotate(-14deg);
+  mix-blend-mode: screen;
+  mask-image: linear-gradient(90deg, transparent, var(--color-night) 25%, var(--color-night) 75%, transparent);
+}
+
+.milkyGlow {
+  @apply absolute inset-0;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    color-mix(in srgb, var(--color-milky-gold) 26%, transparent),
+    color-mix(in srgb, var(--color-milky-rose) 12%, transparent) 45%,
+    transparent 72%
+  );
+  filter: blur(18px);
+}
+
+.milkyDust {
+  @apply absolute;
+  inset: 60px 0;
+  background-image:
+    radial-gradient(circle at 20% 40%, var(--color-dust-cream) 0 0.9px, transparent 1.5px),
+    radial-gradient(circle at 70% 70%, var(--color-white) 0 0.7px, transparent 1.3px),
+    radial-gradient(circle at 45% 20%, var(--color-dust-gold) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 85% 50%, var(--color-white) 0 0.6px, transparent 1.2px);
+  background-size: 23px 19px, 37px 29px, 43px 41px, 17px 23px;
+  opacity: 0.55;
+  mask-image: radial-gradient(50% 50% at 50% 50%, var(--color-night), transparent 75%);
+}
+
+/* --- Line art: strokes and fills in white --- */
+
+.stroke {
+  stroke: var(--color-white);
+}
+
+.fill {
+  fill: var(--color-white);
+}
+
+.flourish {
+  @apply absolute overflow-visible;
+  opacity: 0.7;
+  filter:
+    drop-shadow(0 0 2px color-mix(in srgb, var(--color-flourish-halo) 90%, transparent))
+    drop-shadow(0 0 8px color-mix(in srgb, var(--color-lilac-halo) 55%, transparent));
+}
+
+.leftTop {
+  left: 16px;
+  top: 9%;
+}
+
+.leftBottom {
+  left: 16px;
+  top: 58%;
+  transform: scaleY(-1);
+}
+
+.rightTop {
+  right: 16px;
+  top: 32%;
+  transform: scaleX(-1);
+}
+
+.rightBottom {
+  right: 16px;
+  top: 78%;
+  transform: scale(-1, -1);
+}
+
+/* The flourish's own star twinkles in place; the flourish's halo already lights it. */
+.flourishStar {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.rays {
+  @apply absolute;
+  left: -9px;
+  top: -9px;
+  opacity: 0.35;
+}
+
+.starColumn {
+  @apply absolute overflow-visible;
+  right: 22px;
+  top: 105px;
+  filter:
+    drop-shadow(0 0 1.5px var(--color-white))
+    drop-shadow(0 0 5px color-mix(in srgb, var(--color-star-halo) 90%, transparent))
+    drop-shadow(0 0 12px color-mix(in srgb, var(--color-lilac-halo) 60%, transparent));
+}
+
+/* --- Motion: only the glitter and the stars move, and never under reduced motion --- */
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes star {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .glitterA {
+    animation: twinkle 3.4s ease-in-out infinite;
+  }
+
+  .glitterB {
+    animation: twinkle 4.6s ease-in-out -2s infinite;
+  }
+
+  .flourishStar,
+  .starColumn {
+    animation: star 3.2s ease-in-out infinite;
+  }
+}

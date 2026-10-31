@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
-import Button from '../button/Button';
+import Logo from '../logo/Logo';
 import styles from './Header.module.css';
 
 export default function Header() {
@@ -23,9 +23,9 @@ export default function Header() {
     menu = (
       <>
         <span className={styles.userName}>{user.name}</span>
-        <Button variant="secondary" onClick={logoutHandler} disabled={loggingOut}>
+        <button type="button" className={styles.outline} onClick={logoutHandler} disabled={loggingOut}>
           {loggingOut ? 'Излизане…' : 'Изход'}
-        </Button>
+        </button>
       </>
     );
   } else {
@@ -34,7 +34,7 @@ export default function Header() {
         <Link to="/login" className={styles.link}>
           Вход
         </Link>
-        <Link to="/register" className={styles.link}>
+        <Link to="/register" className={styles.outline}>
           Регистрация
         </Link>
       </>
@@ -44,9 +44,7 @@ export default function Header() {
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
-        <Link to="/" className={styles.logo}>
-          nAIlbook
-        </Link>
+        <Logo />
         <nav aria-label="Основно меню" className={styles.nav}>
           {menu}
         </nav>

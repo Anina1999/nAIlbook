@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router';
 import Button from '../../components/button/Button';
 import ErrorMessage from '../../components/error-message/ErrorMessage';
 import FormField from '../../components/form-field/FormField';
+import Sheet from '../../components/sheet/Sheet';
 import { useAuth } from '../../hooks/useAuth';
 import { useForm } from '../../hooks/useForm';
 import { useFrom } from '../../hooks/useFrom';
@@ -23,37 +24,39 @@ export default function Login() {
   };
 
   return (
-    <section className={styles.page}>
-      <h1 className={styles.title}>Вход</h1>
-      {formError && <ErrorMessage message={formError.message} items={formError.items} />}
-      <form noValidate className={styles.form} onSubmit={submitHandler(loginHandler)}>
-        <FormField
-          label="Имейл"
-          name="email"
-          type="email"
-          autoComplete="email"
-          value={values.email}
-          onChange={changeHandler}
-          error={fieldErrors.email}
-        />
-        <FormField
-          label="Парола"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          value={values.password}
-          onChange={changeHandler}
-          error={fieldErrors.password}
-        />
-        <div className={styles.actions}>
-          <Button type="submit" disabled={pending}>
-            {pending ? 'Влизане…' : 'Влез'}
-          </Button>
-          <Link to="/register" state={{ from }} className={styles.switchLink}>
-            Нямате профил? Регистрация
-          </Link>
-        </div>
-      </form>
-    </section>
+    <Sheet narrow>
+      <section className={styles.page}>
+        <h1 className={styles.title}>Вход</h1>
+        {formError && <ErrorMessage message={formError.message} items={formError.items} />}
+        <form noValidate className={styles.form} onSubmit={submitHandler(loginHandler)}>
+          <FormField
+            label="Имейл"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={values.email}
+            onChange={changeHandler}
+            error={fieldErrors.email}
+          />
+          <FormField
+            label="Парола"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            value={values.password}
+            onChange={changeHandler}
+            error={fieldErrors.password}
+          />
+          <div className={styles.actions}>
+            <Button type="submit" disabled={pending}>
+              {pending ? 'Влизане…' : 'Влез'}
+            </Button>
+            <Link to="/register" state={{ from }} className={styles.switchLink}>
+              Нямате профил? Регистрация
+            </Link>
+          </div>
+        </form>
+      </section>
+    </Sheet>
   );
 }

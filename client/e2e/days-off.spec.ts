@@ -1,5 +1,6 @@
 import type { APIRequestContext, Locator, Page, TestInfo } from '@playwright/test';
 import { expect, test } from './fixtures';
+import { contentOverflow, horizontalOverflow } from './layout';
 import { API_URL } from './ports';
 
 // Every test makes its own manicurist (and client) through the API with a unique email,
@@ -110,10 +111,6 @@ async function logInWith(page: Page, token: string) {
   await page.addInitScript((value) => localStorage.setItem('nailbook.token', value), token);
 }
 
-async function horizontalOverflow(page: Page) {
-  return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-}
-
 test('a manicurist opens days off from the header, adds a day and removes it', async ({ page, request }, testInfo) => {
   const { token } = await registerManicurist(request, testInfo);
   await logInWith(page, token);
@@ -134,6 +131,7 @@ test('a manicurist opens days off from the header, adds a day and removes it', a
   await expect(field).toHaveValue('');
   await expect(listSection(page).getByRole('listitem')).toHaveText([new RegExp(longDate(date))]);
   expect(await horizontalOverflow(page)).toBe(0);
+  expect(await contentOverflow(page)).toBe(0);
 
   await listSection(page).getByRole('button', { name: `Премахни ${longDate(date)}` }).click();
   await expect(listSection(page).getByRole('status')).toHaveText('Почивният ден е премахнат.');
@@ -194,6 +192,7 @@ test('a day with a booking shows it, and after the booking is cancelled the day 
   await expect(row.getByRole('link', { name: '0888 123 456' })).toBeVisible();
   await expect(listSection(page).getByRole('listitem')).toHaveCount(0);
   expect(await horizontalOverflow(page)).toBe(0);
+  expect(await contentOverflow(page)).toBe(0);
 
   await row.getByRole('button', { name: 'Отмени часа' }).click();
   const reason = row.getByRole('textbox', { name: 'Причина за отмяната' });

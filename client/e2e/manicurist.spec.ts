@@ -1,5 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures';
+import { contentOverflow, horizontalOverflow } from './layout';
 import { API_URL } from './ports';
 
 // Both projects book on the same e2e.db in one run, so a test always takes the
@@ -186,10 +187,6 @@ async function tabTo(page: Page, target: Locator) {
   await expect(target).toBeFocused();
 }
 
-async function horizontalOverflow(page: Page) {
-  return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-}
-
 type PackedDay = {
   date: string;
   /** The Sofia times of a busy block that ends off the grid, with a free start right after it. */
@@ -333,9 +330,11 @@ test('at 375px the page has no horizontal scroll and a time is booked with the k
   await weekLoaded(page);
   await expect(busyCells(page).first()).toBeVisible();
   expect(await horizontalOverflow(page)).toBe(0);
+  expect(await contentOverflow(page)).toBe(0);
 
   await openMaria(page);
   expect(await horizontalOverflow(page)).toBe(0);
+  expect(await contentOverflow(page)).toBe(0);
 
   // Tab into the radio group (the first service is checked by default), Space keeps it,
   // an arrow moves to the next one.
@@ -355,6 +354,7 @@ test('at 375px the page has no horizontal scroll and a time is booked with the k
   const slot = freeTimes(page).first();
   await expect(slot).toBeVisible();
   expect(await horizontalOverflow(page)).toBe(0);
+  expect(await contentOverflow(page)).toBe(0);
 
   await tabTo(page, slot);
   await page.keyboard.press('Space');
@@ -363,6 +363,7 @@ test('at 375px the page has no horizontal scroll and a time is booked with the k
   const book = page.getByRole('button', { name: 'Запази час' });
   await tabTo(page, book);
   expect(await horizontalOverflow(page)).toBe(0);
+  expect(await contentOverflow(page)).toBe(0);
   await page.keyboard.press('Enter');
 
   // A guest is sent to log in.
@@ -437,4 +438,5 @@ test('the page shows the studio on a map with exactly one marker, a picture with
   // Without an action the marker is not a button.
   await expect(map.getByRole('button', { name: / на картата$/ })).toHaveCount(0);
   expect(await horizontalOverflow(page)).toBe(0);
+  expect(await contentOverflow(page)).toBe(0);
 });

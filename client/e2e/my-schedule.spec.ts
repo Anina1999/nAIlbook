@@ -1,5 +1,6 @@
 import type { APIRequestContext, Locator, Page, TestInfo } from '@playwright/test';
 import { expect, test } from './fixtures';
+import { contentOverflow, horizontalOverflow } from './layout';
 import { API_URL } from './ports';
 
 // Every test makes its own manicurist (and client) through the API with a unique email
@@ -154,23 +155,6 @@ function daySection(page: Page, date: string): Locator {
 /** Logged in with a token from the API: the app reads it from localStorage at startup. */
 async function logInWith(page: Page, token: string) {
   await page.addInitScript((value) => localStorage.setItem('nailbook.token', value), token);
-}
-
-async function horizontalOverflow(page: Page) {
-  return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-}
-
-/**
- * How far the header's and the main column's content reaches past the window's right edge.
- * The layout clips sideways overflow (`overflow-x: clip`), so the page's scroll width alone
- * would not show a menu that runs off the screen.
- */
-async function contentOverflow(page: Page) {
-  return page.evaluate(() => {
-    const elements = [...document.querySelectorAll('header *, main *')];
-    const right = Math.max(...elements.map((element) => element.getBoundingClientRect().right));
-    return Math.max(0, right - document.documentElement.clientWidth);
-  });
 }
 
 test('a manicurist opens the schedule from the header and cancels a booking', async ({ page, request }, testInfo) => {

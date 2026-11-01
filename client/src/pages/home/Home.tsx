@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { searchManicurists, type ManicuristSummary } from '../../api/manicurists';
+import ConnectionError from '../../components/connection-error/ConnectionError';
 import ErrorMessage from '../../components/error-message/ErrorMessage';
 import SearchForm, { type SearchValues } from '../../components/search-form/SearchForm';
 import SearchResults from '../../components/search-results/SearchResults';
@@ -32,11 +33,16 @@ export default function Home() {
     data: result,
     error,
     loading,
+    offline,
   } = useAsync<SearchResult>(
     (signal) =>
       searchManicurists({ city, service }, signal).then(({ manicurists }) => ({ city, service, manicurists })),
     [city, service],
   );
+
+  // The server could not be reached: no hero and no search, only the message and
+  // «Зареди отново», even over an earlier result.
+  if (offline) return <ConnectionError />;
 
   const searchHandler = (values: SearchValues) => {
     const next = new URLSearchParams();

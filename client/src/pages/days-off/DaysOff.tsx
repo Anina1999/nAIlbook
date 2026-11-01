@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from 'react';
 import { getMyDaysOff } from '../../api/me';
+import ConnectionError from '../../components/connection-error/ConnectionError';
 import DayOffConflict from '../../components/day-off-conflict/DayOffConflict';
 import DayOffForm from '../../components/day-off-form/DayOffForm';
 import DayOffList from '../../components/day-off-list/DayOffList';
@@ -18,7 +19,7 @@ export default function DaysOff() {
   const listTitleRef = useRef<HTMLHeadingElement>(null);
   // Bumped after a day off is added or removed, so the list loads again.
   const [reloadCount, setReloadCount] = useState(0);
-  const { data, error } = useAsync((signal) => getMyDaysOff(signal), [reloadCount]);
+  const { data, error, offline } = useAsync((signal) => getMyDaysOff(signal), [reloadCount]);
 
   const reloadHandler = () => setReloadCount((count) => count + 1);
   const marking = useMarkDayOff(reloadHandler);
@@ -33,6 +34,8 @@ export default function DaysOff() {
     if (await removing.remove(id)) listTitleRef.current?.focus();
   };
 
+  // The server could not be reached: only the message and «Зареди отново», even over an earlier result.
+  if (offline) return <ConnectionError />;
   if (!data) {
     return <Sheet>{error ? <ErrorMessage message={error} /> : <Loader />}</Sheet>;
   }

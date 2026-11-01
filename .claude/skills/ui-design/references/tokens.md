@@ -13,6 +13,41 @@ The tokens are defined once, in the `@theme static` block of `client/src/index.c
   --font-sans: "Montserrat", system-ui, sans-serif;
   --font-display: "Cormorant Garamond", Georgia, serif; /* h1–h3 and the logo */
 
+  /* --- Type sizes --- */
+  --type-scale: 0.875;            /* the one ratio for all text; outside Tailwind's namespaces, so no utility */
+  /* Tailwind's sizes × the ratio; their line-heights stay Tailwind's ratios. Readable text is at least
+     13px (text-sm); text-xs stays 12px, only for a smaller part of a line (the cents, the times of «Заето»). */
+  --text-sm: max(0.8125rem, calc(0.875rem * var(--type-scale)));
+  --text-base: calc(1rem * var(--type-scale));
+  --text-lg: calc(1.125rem * var(--type-scale));
+  --text-xl: calc(1.25rem * var(--type-scale));
+  --text-2xl: calc(1.5rem * var(--type-scale));
+  --text-3xl: calc(1.875rem * var(--type-scale));
+  /* Text-entry controls: 16px, not scaled, because iOS Safari zooms in on a smaller field. */
+  --text-control: 1rem;
+  --text-control--line-height: 1.5;
+  /* The sizes of the home design. */
+  --text-badge: 0.8125rem;        /* the home badge, all caps: the 13px floor, not scaled */
+  --text-badge--letter-spacing: 0.08em;
+  --text-label: calc(15px * var(--type-scale)); /* glass labels, the footer line, the card's initials */
+  --text-hero-copy: calc(17px * var(--type-scale)); /* the hero line under the home title */
+  --text-card-name: calc(22px * var(--type-scale)); /* the manicurist card's name, 19.25px */
+  --text-card-name--line-height: 1.2;
+  --text-section-title: calc(26px * var(--type-scale)); /* home section titles («Маникюристи») */
+  --text-section-title--line-height: 1.2;
+  --text-section-title--letter-spacing: -0.01em;
+  --text-hero-title: clamp(
+    calc(34px * var(--type-scale)),
+    calc(4.4vw * var(--type-scale)),
+    calc(52px * var(--type-scale))
+  );                              /* the home h1 only */
+  --text-hero-title--line-height: 1.1;
+  --text-hero-title--letter-spacing: -0.01em;
+  --text-error-code: calc(96px * var(--type-scale)); /* the «404» of the not-found page, 84px */
+  --text-error-code--line-height: 1;
+  --text-logo: 24px;              /* the logo in the header: a logotype, not scaled */
+  --text-logo-small: 18px;        /* the logo in the footer, not scaled */
+
   /* --- Light sheets --- */
   --color-surface: #FBF8F9;       /* sheet background */
   --color-raised: #FFFFFF;        /* cards, inputs, dialogs */
@@ -146,6 +181,13 @@ The tokens are defined once, in the `@theme static` block of `client/src/index.c
     0 0 14px color-mix(in srgb, var(--color-shade) 80%, transparent),
     0 0 28px color-mix(in srgb, var(--color-shade) 55%, transparent);
 }
+
+@layer base {
+  /* text-base here, so text without a size class follows the type scale too. */
+  body {
+    @apply bg-night text-base text-white;
+  }
+}
 ```
 
 **Contrast** (WCAG), checked by script against the lightest point of the backdrop (#7D5273 on desktop, #77507B on a phone, in its static frame):
@@ -160,16 +202,24 @@ The tokens are defined once, in the `@theme static` block of `client/src/index.c
 - Two families from Google Fonts, both with Cyrillic (served through `unicode-range`): **Montserrat** 400, 500, 600 and 700 for all text (`font-sans`, the default), and **Cormorant Garamond** 500, 600 and 700 for the h1–h3 titles and the logo (`font-display`). Cormorant has no 800: where the design asks for 800, use 700.
 - They are loaded with one `<link>` in `client/index.html`, with `display=swap`. `index.html` sets `<html lang="bg">`.
 
+**One ratio for all text.** Every size is a Tailwind size or a named `--text-*` token × `--type-scale` (0.875) in `index.css`, so changing the ratio changes every text and keeps the hierarchy; spacing and the 44px targets do not change with it. `body` has `text-base`, so text without a size class follows the scale too. Three exceptions: readable text is at least 13px, so `text-sm` is `max(13px, 14px × the ratio)` and the badge is 13px (`text-xs`, 12px and not scaled, is only for a smaller part of a line: the cents of a price and the times of «Заето»), text-entry controls stay 16px (`text-control`, because iOS Safari zooms in on a smaller field), and the logo is not scaled (a logotype). A module never sets a `font-size` in px (SKILL.md, *Where styles live*).
+
 | Use | Class |
 |-----|-------|
-| Meta text (address, duration) | `text-sm` (14px), never for body text |
-| Body, inputs, buttons | `text-base` (16px, line-height 1.5) |
-| Section titles on a sheet («Свободни часове», «Изберете услуга») | `font-display text-2xl font-bold text-ink` |
-| Page title on a sheet | `font-display text-3xl font-bold text-ink` |
-| Card title (the manicurist card) | `font-display font-bold`, 20px, line-height 1.2, with a 0.5px text stroke |
-| Home section title («Маникюристи») | `font-display font-bold`, 26px, line-height 1.2, letter-spacing -0.01em, silver |
-| Home page title only | `font-display font-bold`, `clamp(34px, 4.4vw, 52px)`, line-height 1.1, letter-spacing -0.01em, silver |
-| Copy on the night | `font-medium text-moon` at 17px (the hero line), `text-base leading-tight font-medium text-moon` (the counter, 6px under the section title), with the `copy` shadow |
+| The cents of a price, the times of «Заето» | `text-xs` (12px, not scaled; only a smaller part of a line) |
+| Meta text (address, duration), the service rows of a card | `text-sm` (13px, the floor for readable text), never for body text |
+| Body and buttons | `text-base` (14px, line-height 1.5); `body` has it too |
+| Inputs, selects, textareas | `text-control` (16px, line-height 1.5, not scaled) |
+| Section titles on a sheet («Свободни часове», «Изберете услуга») | `font-display text-2xl font-bold text-ink` (21px) |
+| Page title on a sheet | `font-display text-3xl font-bold text-ink` (26.25px) |
+| The «404» of the not-found page | `font-display text-error-code font-bold text-moon lining-nums` (84px, line-height 1) with the `copy` shadow, above its h1 (`font-display text-3xl font-bold text-white`), all on the night |
+| Card title (the manicurist card) | `font-display text-card-name font-bold` (19.25px, 22px × the ratio, line-height 1.2), with a 0.5px text stroke |
+| Home section title («Маникюристи») | `font-display text-section-title font-bold` (22.75px, line-height 1.2, letter-spacing -0.01em), silver |
+| Home page title only | `font-display text-hero-title font-bold` (`clamp(29.75px, 3.85vw, 45.5px)`, line-height 1.1, letter-spacing -0.01em), silver |
+| Copy on the night | `text-hero-copy font-medium text-moon` (14.875px, the hero line), `text-base leading-tight font-medium text-moon` (the counter, 6px under the section title), with the `copy` shadow |
+| The home badge | `text-badge` (13px, letter-spacing 0.08em, all caps; the floor, not scaled) |
+| Glass labels, the footer line, the card's initials | `text-label` (13.125px) |
+| The logo | `text-logo` (24px, header) and `text-logo-small` (18px, footer), not scaled |
 
 - **Silver text** (the h1 and h2 on `/`): `color: var(--color-silver)` is the fallback; the `silver-*` gradient with the white sparks, `background-clip: text` and a transparent fill only inside `@supports (background-clip: text) or (-webkit-background-clip: text)`; under `@media (forced-colors: active)` no gradient and `CanvasText`. It keeps the design's dark drop shadows.
 - **Copy on the night** gets the `copy` text shadow (`text-shadow-copy`); it passes 4.5:1 without it.
@@ -179,7 +229,7 @@ The tokens are defined once, in the `@theme static` block of `client/src/index.c
 
 ## Layout and spacing
 
-- **Scale.** The home design is the Claude Design artboard at about 75% for display sizes (the column, titles, paddings, radii, the decoration); body text stays 16px, small text at least 12px, and every control and link at least 44px tall.
+- **Scale.** The home design is the Claude Design artboard at about 75% for display sizes (the column, titles, paddings, radii, the decoration); the text follows the type scale (*Type*: body text 14px, inputs 16px, readable small text at least 13px), and every control and link is at least 44px tall.
 - Mobile-first. **The 1120px centred column:** `main` is `max-w-280 mx-auto px-6` (24px side padding at every width; widened from 960px so that three cards with the arrows over them still fit «Ноктопластика» on one line). The header's and the footer's inner row spans the full window width with `px-6`: the logo on the far left, the menu (or the copyright) on the far right (decided after the user's look in the browser, 2026-10-30). The working screens sit in a light sheet in that column: the manicurist's page uses the full column, the auth forms (`/login`, `/register`) and later the manicurist editors a `max-w-xl` sheet, left-aligned. On `/` the glass search panel spans the whole column, and the results are a carousel (*Components*). Long text (a bio) stays within `max-w-prose`.
 - Spacing follows Tailwind's scale, including the half steps the home design uses (`pt-2.5`, `py-1.5`, `p-4.5`), so `/` keeps the design's sizes at its scale. No arbitrary values such as `mt-[13px]`. `gap-2` inside a group of controls, `gap-4` between form fields, `gap-8` between sections of a sheet; on `/` `gap-10` between the hero and the results, and the hero `pt-12` with `gap-6`.
 - Content is left-aligned. Only empty states are centred.

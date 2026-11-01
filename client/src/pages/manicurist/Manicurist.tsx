@@ -4,6 +4,7 @@ import type { User } from '../../api/auth';
 import { ApiError } from '../../api/client';
 import { getManicurist, type Manicurist, type Service } from '../../api/manicurists';
 import Button from '../../components/button/Button';
+import ConnectionError from '../../components/connection-error/ConnectionError';
 import ErrorMessage from '../../components/error-message/ErrorMessage';
 import Loader from '../../components/loader/Loader';
 import Price from '../../components/price/Price';
@@ -66,6 +67,8 @@ export default function ManicuristPage() {
   // «Запази час» on a card links to #schedule: once the table is on screen, scroll to it.
   useScrollToHash(SCHEDULE_ID, weekSlots.data !== null);
 
+  // The profile or the week could not reach the server: only the message and «Зареди отново».
+  if (profile.offline || weekSlots.offline) return <ConnectionError />;
   if (profile.error) {
     return (
       <Sheet>

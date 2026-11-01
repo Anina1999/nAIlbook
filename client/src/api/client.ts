@@ -3,7 +3,8 @@
 const BASE_URL: string = import.meta.env.VITE_API_URL;
 const TOKEN_KEY = 'nailbook.token';
 
-const NETWORK_ERROR_MESSAGE = 'Няма връзка със сървъра. Проверете връзката и опитайте отново.';
+// The message of NETWORK_ERROR, also shown on its own by ConnectionError.
+export const NETWORK_ERROR_MESSAGE = 'Няма връзка със сървъра. Проверете връзката и опитайте отново.';
 // Used only when an error response does not carry the { error } shape.
 export const UNEXPECTED_ERROR_MESSAGE = 'Нещо се обърка. Опитайте отново.';
 

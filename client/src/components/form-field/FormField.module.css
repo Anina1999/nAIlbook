@@ -15,7 +15,7 @@
 
 /* muted on white: 6.0, so an example in the field stays readable. */
 .input {
-  @apply w-full bg-raised text-ink text-base border border-field rounded-lg min-h-11 px-3 placeholder:text-muted;
+  @apply w-full bg-raised text-ink text-control border border-field rounded-lg min-h-11 px-3 placeholder:text-muted;
   @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
   @apply aria-invalid:border-danger;
 }
@@ -36,8 +36,7 @@
 
 /* White labels on the glass panel: 6.58 without the shadow. */
 .glassLabel {
-  @apply text-white text-shadow-copy;
-  font-size: 15px;
+  @apply text-label text-white text-shadow-copy;
 }
 
 /* The white field on the dark panel is the control's boundary; the field-soft border

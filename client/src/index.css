@@ -5,6 +5,41 @@
   --font-sans: "Montserrat", system-ui, sans-serif;
   --font-display: "Cormorant Garamond", Georgia, serif; /* h1–h3 and the logo */
 
+  /* --- Type sizes --- */
+  --type-scale: 0.875;            /* the one ratio for all text; outside Tailwind's namespaces, so no utility */
+  /* Tailwind's sizes × the ratio; their line-heights stay Tailwind's ratios. Readable text is at least
+     13px (text-sm); text-xs stays 12px, only for a smaller part of a line (the cents, the times of «Заето»). */
+  --text-sm: max(0.8125rem, calc(0.875rem * var(--type-scale)));
+  --text-base: calc(1rem * var(--type-scale));
+  --text-lg: calc(1.125rem * var(--type-scale));
+  --text-xl: calc(1.25rem * var(--type-scale));
+  --text-2xl: calc(1.5rem * var(--type-scale));
+  --text-3xl: calc(1.875rem * var(--type-scale));
+  /* Text-entry controls: 16px, not scaled, because iOS Safari zooms in on a smaller field. */
+  --text-control: 1rem;
+  --text-control--line-height: 1.5;
+  /* The sizes of the home design. */
+  --text-badge: 0.8125rem;        /* the home badge, all caps: the 13px floor, not scaled */
+  --text-badge--letter-spacing: 0.08em;
+  --text-label: calc(15px * var(--type-scale)); /* glass labels, the footer line, the card's initials */
+  --text-hero-copy: calc(17px * var(--type-scale)); /* the hero line under the home title */
+  --text-card-name: calc(22px * var(--type-scale)); /* the manicurist card's name, 19.25px */
+  --text-card-name--line-height: 1.2;
+  --text-section-title: calc(26px * var(--type-scale)); /* home section titles («Маникюристи») */
+  --text-section-title--line-height: 1.2;
+  --text-section-title--letter-spacing: -0.01em;
+  --text-hero-title: clamp(
+    calc(34px * var(--type-scale)),
+    calc(4.4vw * var(--type-scale)),
+    calc(52px * var(--type-scale))
+  );                              /* the home h1 only */
+  --text-hero-title--line-height: 1.1;
+  --text-hero-title--letter-spacing: -0.01em;
+  --text-error-code: calc(96px * var(--type-scale)); /* the «404» of the not-found page, 84px */
+  --text-error-code--line-height: 1;
+  --text-logo: 24px;              /* the logo in the header: a logotype, not scaled */
+  --text-logo-small: 18px;        /* the logo in the footer, not scaled */
+
   /* --- Light sheets --- */
   --color-surface: #FBF8F9;       /* sheet background */
   --color-raised: #FFFFFF;        /* cards, inputs, dialogs */
@@ -140,7 +175,8 @@
 }
 
 @layer base {
+  /* text-base here, so text without a size class follows the type scale too. */
   body {
-    @apply bg-night text-white;
+    @apply bg-night text-base text-white;
   }
 }

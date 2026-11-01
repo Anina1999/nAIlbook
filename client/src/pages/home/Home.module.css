@@ -14,9 +14,7 @@
 
 /* The one all-caps label (ui-design, Type). blush on the badge: 9.7 (7.2 on a phone). */
 .badge {
-  @apply self-start rounded-full border border-white/60 bg-white/10 px-3 py-1.5 font-semibold text-blush uppercase;
-  font-size: 13px;
-  letter-spacing: 0.08em;
+  @apply self-start rounded-full border border-white/60 bg-white/10 px-3 py-1.5 text-badge font-semibold text-blush uppercase;
   box-shadow:
     0 0 1.5px var(--color-white),
     0 0 6px color-mix(in srgb, var(--color-star-halo) 90%, transparent),
@@ -76,16 +74,12 @@
 }
 
 .title {
-  @apply m-0 font-display font-bold;
-  font-size: clamp(34px, 4.4vw, 52px);
-  line-height: 1.1;
-  letter-spacing: -0.01em;
+  @apply m-0 font-display text-hero-title font-bold;
 }
 
 /* moon at the lightest point of the backdrop: 5.89 without the shadow. */
 .copy {
-  @apply leading-normal font-medium text-moon text-shadow-copy;
-  font-size: 17px;
+  @apply text-hero-copy leading-normal font-medium text-moon text-shadow-copy;
 }
 
 .results {
@@ -93,10 +87,7 @@
 }
 
 .sectionTitle {
-  @apply m-0 font-display font-bold;
-  font-size: 26px;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
+  @apply m-0 font-display text-section-title font-bold;
 }
 
 /* The heading and the status line, as the carousel's head has them. */

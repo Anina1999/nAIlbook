@@ -9,6 +9,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   // Only a stored token needs the startup /me call.
   const [loading, setLoading] = useState(() => getToken() !== null);
+  const [offline, setOffline] = useState(false);
 
   const signOut = useCallback(() => {
     clearToken();
@@ -30,7 +31,10 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch((error: unknown) => {
         // A 401 clears the token; any other error keeps it for the next load.
-        if (!controller.signal.aborted && error instanceof ApiError && error.status === 401) signOut();
+        if (controller.signal.aborted || !(error instanceof ApiError)) return;
+        if (error.status === 401) signOut();
+        // No answer at all: the screens of a role show ConnectionError instead of sending to /login.
+        else if (error.code === 'NETWORK_ERROR') setOffline(true);
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -65,8 +69,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, [signOut]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, token, loading, login, register, logout }),
-    [user, token, loading, login, register, logout],
+    () => ({ user, token, loading, offline, login, register, logout }),
+    [user, token, loading, offline, login, register, logout],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

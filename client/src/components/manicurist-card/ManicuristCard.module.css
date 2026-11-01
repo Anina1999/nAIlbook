@@ -102,8 +102,7 @@
 
 /* plum on pearl: 11.4. */
 .avatar {
-  @apply flex size-10 shrink-0 items-center justify-center rounded-full border border-candy font-bold text-plum;
-  font-size: 15px;
+  @apply flex size-10 shrink-0 items-center justify-center rounded-full border border-candy text-label font-bold text-plum;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--color-white) 95%, transparent) 0%,
@@ -122,9 +121,7 @@
 
 /* card-title on the darkest stop: 8.62. */
 .name {
-  @apply font-display font-bold wrap-break-word text-card-title;
-  font-size: 20px;
-  line-height: 1.2;
+  @apply font-display text-card-name font-bold wrap-break-word text-card-title;
   -webkit-text-stroke: 0.5px currentColor;
   paint-order: stroke fill;
   text-shadow:

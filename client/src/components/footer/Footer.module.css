@@ -62,6 +62,5 @@
 }
 
 .line {
-  @apply font-medium text-shadow-copy;
-  font-size: 15px;
+  @apply text-label font-medium text-shadow-copy;
 }

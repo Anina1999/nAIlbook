@@ -7,6 +7,12 @@ export type AsyncState<T> = {
   /** The message to show: the ApiError message, else UNEXPECTED_ERROR_MESSAGE. */
   error: string | null;
   loading: boolean;
+  /**
+   * True when the last run could not reach the server (an ApiError with the code
+   * NETWORK_ERROR); false again after a successful run. The screen then shows only
+   * ConnectionError.
+   */
+  offline: boolean;
 };
 
 /**
@@ -16,7 +22,12 @@ export type AsyncState<T> = {
  * replaces a newer one. Only for loads, never for submits.
  */
 export function useAsync<T>(fn: (signal: AbortSignal) => Promise<T>, deps: DependencyList): AsyncState<T> {
-  const [state, setState] = useState<AsyncState<T>>({ data: null, error: null, loading: true });
+  const [state, setState] = useState<AsyncState<T>>({
+    data: null,
+    error: null,
+    loading: true,
+    offline: false,
+  });
 
   // Read through an effect event, so a new `fn` on every render does not restart the load; `deps` do.
   const run = useEffectEvent((signal: AbortSignal) => fn(signal));
@@ -27,13 +38,14 @@ export function useAsync<T>(fn: (signal: AbortSignal) => Promise<T>, deps: Depen
 
     run(controller.signal).then(
       (data) => {
-        if (!controller.signal.aborted) setState({ data, error: null, loading: false });
+        if (!controller.signal.aborted) setState({ data, error: null, loading: false, offline: false });
       },
       (error: unknown) => {
         // The AbortError of a run we cancelled is not an error to show.
         if (controller.signal.aborted) return;
         const message = error instanceof ApiError ? error.message : UNEXPECTED_ERROR_MESSAGE;
-        setState((prev) => ({ ...prev, error: message, loading: false }));
+        const offline = error instanceof ApiError && error.code === 'NETWORK_ERROR';
+        setState((prev) => ({ ...prev, error: message, loading: false, offline }));
       },
     );
 

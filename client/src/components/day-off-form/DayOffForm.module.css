@@ -6,11 +6,12 @@
   @apply flex flex-col gap-4 sm:flex-row sm:items-start;
 }
 
-/* The label is 24px tall (font-semibold, 16px), so the button lines up with the input. */
+/* The label is 21px tall (text-base, 14px at line-height 1.5) and 4px above the input,
+   so the button 25px down lines up with the input. */
 .field {
   @apply min-w-0 sm:w-64;
 }
 
 .submit {
-  @apply sm:mt-7;
+  @apply sm:mt-6.25;
 }

@@ -1,0 +1,11 @@
+@reference "../../index.css";
+
+/* Fills the free height of main (a flex column), so the message and the button sit in its middle. */
+.page {
+  @apply flex flex-1 flex-col items-center justify-center gap-4 py-8 text-center;
+}
+
+/* moon at the lightest point of the backdrop: 5.89 without the shadow. */
+.message {
+  @apply max-w-prose text-lg font-medium wrap-break-word text-moon text-shadow-copy;
+}

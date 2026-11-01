@@ -7,6 +7,8 @@ export type AuthContextValue = {
   token: string | null;
   /** True while the startup /me call is pending. */
   loading: boolean;
+  /** True when the startup /me call could not reach the server (NETWORK_ERROR); the token is kept. */
+  offline: boolean;
   login: (input: LoginInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;

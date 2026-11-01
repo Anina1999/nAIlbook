@@ -9,6 +9,7 @@ import Home from './pages/home/Home';
 import ManicuristPage from './pages/manicurist/Manicurist';
 import DaysOff from './pages/days-off/DaysOff';
 import MyBookings from './pages/my-bookings/MyBookings';
+import NotFound from './pages/not-found/NotFound';
 import Schedule from './pages/schedule/Schedule';
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/schedule" element={<Schedule />} />
             <Route path="/days-off" element={<DaysOff />} />
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </AuthProvider>

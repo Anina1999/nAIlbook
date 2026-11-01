@@ -4,6 +4,7 @@ import { getMyBookings, type Booking } from '../../api/bookings';
 import BookingDetails from '../../components/booking-details/BookingDetails';
 import BookingList from '../../components/booking-list/BookingList';
 import BookingWeek from '../../components/booking-week/BookingWeek';
+import ConnectionError from '../../components/connection-error/ConnectionError';
 import ErrorMessage from '../../components/error-message/ErrorMessage';
 import Loader from '../../components/loader/Loader';
 import Sheet from '../../components/sheet/Sheet';
@@ -18,7 +19,7 @@ export default function MyBookings() {
   const pastTitleId = useId();
   // Bumped after a cancellation or a cancel error, so the list loads again.
   const [reloadCount, setReloadCount] = useState(0);
-  const { data, error } = useAsync((signal) => getMyBookings(signal), [reloadCount]);
+  const { data, error, offline } = useAsync((signal) => getMyBookings(signal), [reloadCount]);
 
   const today = todayInSofia();
   const { week, firstWeek, lastWeek, selectWeek } = useMyBookingsWeek(data?.upcoming ?? null, today);
@@ -30,6 +31,8 @@ export default function MyBookings() {
     setReloadCount((count) => count + 1);
   };
 
+  // The server could not be reached: only the message and «Зареди отново», even over an earlier result.
+  if (offline) return <ConnectionError />;
   if (!data) {
     return <Sheet>{error ? <ErrorMessage message={error} /> : <Loader />}</Sheet>;
   }

@@ -1,0 +1,28 @@
+@reference "../../index.css";
+
+/* Fills the free height of main (a flex column), so the text sits in its middle, like ConnectionError. */
+.page {
+  @apply flex flex-1 flex-col items-center justify-center gap-3 py-8 text-center;
+}
+
+/* The code above the title, in the display font; lining-nums, because Cormorant's old-style
+   figures drop the 0 below the 4s. moon at the lightest point of the backdrop: 5.89. */
+.code {
+  @apply font-display text-error-code font-bold text-moon lining-nums text-shadow-copy;
+}
+
+/* white on the night: 6.32. */
+.title {
+  @apply font-display text-3xl font-bold wrap-break-word text-white text-shadow-copy;
+}
+
+/* moon at the lightest point of the backdrop: 5.89 without the shadow. */
+.note {
+  @apply max-w-prose font-medium wrap-break-word text-moon text-shadow-copy;
+}
+
+/* A link on the night (ui-design, Tokens): blush, white on hover, a white focus outline. */
+.link {
+  @apply inline-flex min-h-11 items-center rounded-lg font-semibold text-blush text-shadow-copy hover:text-white hover:underline;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white;
+}

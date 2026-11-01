@@ -55,9 +55,10 @@ Every component and page has its own CSS Module (`ui-conventions`, *Structure*).
 - Each module starts with `@reference` to `client/src/index.css` (the path is relative to the module), so `@apply` knows the tokens. `@reference` adds no CSS of its own.
 - The JSX sets only `className={styles.primary}`. No utility classes in JSX. Join several module classes with `[styles.a, cond && styles.b].filter(Boolean).join(' ')`.
 - Class names are camelCase and name the role (`.primary`, `.fieldError`, `.column`), not the look (`.pinkBox`).
-- Plain CSS in a module is only for what `@apply` cannot say (a layered gradient, a shadow of several layers, a `filter`, a mask, a keyframe, a size from the home design such as 15px text), and it still uses the tokens through `var(--color-…)`, never a raw hex. The decoration's gradients, glitter and glows live in the modules of the components that draw them (`Backdrop`, `Logo`, `ManicuristCard`, `SearchForm`...).
+- Plain CSS in a module is only for what `@apply` cannot say (a layered gradient, a shadow of several layers, a `filter`, a mask, a keyframe), and it still uses the tokens through `var(--color-…)`, never a raw hex.
+- **A font size is always a `text-*` token** (`references/tokens.md`, *Type*), never a `font-size` in px in a module. A size the Tailwind scale does not have gets a named token in `index.css` (`text-hero-title`, `text-label`), so one ratio changes every text at once. Only sizes relative to their own text (`em`, the «AI» tag of the logo) stay in the module. The decoration's gradients, glitter and glows live in the modules of the components that draw them (`Backdrop`, `Logo`, `ManicuristCard`, `SearchForm`...).
 - Inline SVG takes its colours from module classes (`fill`, `stroke`, `stop-color: var(--color-…)`), never from a hex in an attribute; `fill="none"` and `currentColor` are fine.
-- `index.css` holds only the Tailwind import, `@theme static` (the colours, the font families, the radii and the `copy` text shadow) and the base style of `body` (`bg-night text-white`).
+- `index.css` holds only the Tailwind import, `@theme static` (the colours, the font families, the type scale: `--type-scale` and the `--text-*` sizes, the radii and the `copy` text shadow) and the base style of `body` (`bg-night text-base text-white`, so text without a size class follows the type scale).
 
 ## Components
 
@@ -77,7 +78,7 @@ Every screen that loads data has four states:
 
 - **Loading:** «Зареждане…» or placeholder rows of the same height, so the layout does not jump. A button during its request is `disabled` and shows the action in progress: «Запазване…». The one exception is a search form: its button stays enabled while results load, so a new search can start (the previous request is aborted, `ui-conventions`, *Loading data*), and the previous results stay on screen with `aria-busy` while a fixed-height line says «Зареждане…»: on `/` the carousel's counter line, or the status line under «Маникюристи» when no result is on screen.
 - **Empty:** says what is missing and offers the next step.
-- **Error:** the server's message in a box with `bg-danger-soft text-danger rounded-lg p-3` above the form, on a sheet and on the night alike. Field errors go under their fields.
+- **Error:** the server's message in a box with `bg-danger-soft text-danger rounded-lg p-3` above the form, on a sheet and on the night alike. Field errors go under their fields. **No connection** (`ConnectionError`, `ui-conventions`): no sheet and no box, the message in `text-lg font-medium text-moon` with the `copy` shadow and «Зареди отново» (the night's primary button, `search`) under it, centred across and down the free height of `main`.
 - **Success:** a short confirmation in `text-success` next to the action, named after the action.
 
 ## Avoid

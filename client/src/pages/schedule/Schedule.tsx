@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type RefObject } from 'react';
 import { getSchedule, type Booking } from '../../api/bookings';
+import ConnectionError from '../../components/connection-error/ConnectionError';
 import DayPicker from '../../components/day-picker/DayPicker';
 import ErrorMessage from '../../components/error-message/ErrorMessage';
 import Loader from '../../components/loader/Loader';
@@ -15,9 +16,12 @@ export default function Schedule() {
   const { date, lastDate, selectDate } = useScheduleDate();
   // Bumped after a cancellation or a cancel error, so the day loads again.
   const [reloadCount, setReloadCount] = useState(0);
-  const { data, error, loading } = useAsync((signal) => getSchedule(date, signal), [date, reloadCount]);
+  const { data, error, loading, offline } = useAsync((signal) => getSchedule(date, signal), [date, reloadCount]);
 
   const reloadHandler = () => setReloadCount((count) => count + 1);
+
+  // The server could not be reached: only the message and «Зареди отново», even over an earlier result.
+  if (offline) return <ConnectionError />;
 
   // useAsync keeps the previous result while a new day loads: never show another day's
   // bookings under this day's title. A reload of the same day keeps its list.

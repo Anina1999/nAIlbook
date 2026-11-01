@@ -67,8 +67,8 @@ The detailed rules live in project skills under [.claude/skills/](../.claude/ski
   - for everyone: search, with the results in a carousel and a map of the studios (Leaflet on OpenStreetMap tiles) synced with the active card, and the manicurist page with a slot picker and the studio on a map;
   - for guests: login and registration;
   - for clients: my bookings;
-  - for every logged-in user: edit profile (email, optional phone, password; the name cannot be changed);
-  - for manicurists: my schedule, days off, and editors for the profile, services and hours.
+  - for manicurists: my schedule and days off.
+- **Later, not in the MVP:** edit profile for every logged-in user (email, optional phone, password; the name cannot be changed) and the manicurist's editors for the profile, services and hours. The server already has the endpoints for the profile, services and hours; only the screens are missing.
 - **Done when:** every flow works by hand on desktop and at phone width.
 
 ### 5. Testing layer
